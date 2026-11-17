@@ -3,12 +3,13 @@
 **v2.2 (M1–M14 + этап 2 + 1С + гибкие номера)**
 
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![CI](https://github.com/AlexeyVN/hotel-linen-management/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexeyVN/hotel-linen-management/actions/workflows/ci.yml)
 
 [![Белая пристань](brand/logo-lockup.png)](brand/README.md)
 
 > **Идея и постановка:** Vlasevskii Aleksei Nikolaevich.
 > **Разработчик:** DeepSeek Harness (AI-разработчик).
-> CI: workflow — `.github/workflows/ci.yml`. Бейдж добавьте после публикации репозитория (шаблон в [docs/GITHUB.md](docs/GITHUB.md)).
+> **Репозиторий:** https://github.com/AlexeyVN/hotel-linen-management. CI — `.github/workflows/ci.yml`.
 
 Веб-приложение для отеля **«Белая пристань»**: учёт постельного белья, инвентаря и химии, склад, приёмка, раздача по номерам, возврат, списание, инвентаризация с фото, QR-метки, выгрузки Excel, интеграция с 1С (опционально), а также хаускипинг — задачи на уборку, чек-листы, смены, раздел «Горничные» с планом и архивом; логотип отеля, печатные формы Excel, группы меню и акцентный цвет.
 

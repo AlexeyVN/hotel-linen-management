@@ -12,6 +12,7 @@
 - Установщик: интерактивный `install.cmd` → `deploy/install.ps1` с проверками, подтверждениями, миграциями, seed, сборкой и настройкой OSPanel.
 - Всего 20 прав; тесты 88/88; ТЗ v3.2; README v2.2.
 - Лицензия Apache-2.0; автор идеи — Vlasevskii Aleksei Nikolaevich; разработчик — DeepSeek Harness.
+- Репозиторий: https://github.com/AlexeyVN/hotel-linen-management (public, main).
 
 ## v2.1.0 — M14 — 2026-11-05
 

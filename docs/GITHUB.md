@@ -8,6 +8,7 @@
 
 **Название:** `hotel-linen-management`
 **Бренд:** «Белая пристань» / White Harbor
+**Репозиторий:** <https://github.com/AlexeyVN/hotel-linen-management> (public, ветка `main`)
 **Версия:** `v2.2.0` (M1–M14 + 1С-статусы + гибкие номера, ТЗ v3.2)
 **Лицензия:** Apache License 2.0 (`LICENSE`, `NOTICE`)
 **Автор идеи:** Vlasevskii Aleksei Nikolaevich
@@ -128,28 +129,22 @@ npm run build
 
 ## 6. Первый push
 
-В текущей среде Git **установлен** (2.56.1, user-scope). Локальный репозиторий проекта уже инициализирован, ветка `main`, первый коммит создан. Осталось создать пустой репозиторий на GitHub и добавить remote.
+В текущей среде Git **установлен** (2.56.1, user-scope). Локальный репозиторий проекта уже инициализирован, ветка `main`, первые коммиты созданы и отправлены в <https://github.com/AlexeyVN/hotel-linen-management>.
 
-GitHub CLI не установлен. Создайте пустой репозиторий через веб-интерфейс GitHub: **без README, LICENSE и .gitignore** (иначе первый push потребует merge).
+Для повторного push:
 
 ```bash
 cd hotel-linen-management
-
-git status --short          # глазами: нет .env, *.db, node_modules
-git remote add origin https://github.com/<OWNER>/<REPO>.git
-git push -u origin main
+git status --short
+git push
 ```
 
-При первом push Git Credential Manager откроет браузер для входа в GitHub. Пароль от GitHub в терминале вводить не нужно.
-
-Если репозиторий ещё не инициализирован (например, на другой машине):
+Для новой машины (репозиторий уже существует):
 
 ```bash
-git init -b main
-git add .
-git commit -m "Release v2.2.0"
-git remote add origin https://github.com/<OWNER>/<REPO>.git
-git push -u origin main
+git clone git@github.com:AlexeyVN/hotel-linen-management.git
+cd hotel-linen-management
+npm ci --prefix app
 ```
 
 GitHub CLI:
