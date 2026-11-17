@@ -128,16 +128,26 @@ npm run build
 
 ## 6. Первый push
 
-Git в текущей рабочей среде не установлен — команды выполняются на машине с Git или через GitHub Desktop.
+В текущей среде Git **установлен** (2.56.1, user-scope). Локальный репозиторий проекта уже инициализирован, ветка `main`, первый коммит создан. Осталось создать пустой репозиторий на GitHub и добавить remote.
+
+GitHub CLI не установлен. Создайте пустой репозиторий через веб-интерфейс GitHub: **без README, LICENSE и .gitignore** (иначе первый push потребует merge).
 
 ```bash
 cd hotel-linen-management
 
-git init
-git add .
 git status --short          # глазами: нет .env, *.db, node_modules
-git commit -m "Release v2.2.0: 1C room statuses, flexible rooms, admin menu"
-git branch -M main
+git remote add origin https://github.com/<OWNER>/<REPO>.git
+git push -u origin main
+```
+
+При первом push Git Credential Manager откроет браузер для входа в GitHub. Пароль от GitHub в терминале вводить не нужно.
+
+Если репозиторий ещё не инициализирован (например, на другой машине):
+
+```bash
+git init -b main
+git add .
+git commit -m "Release v2.2.0"
 git remote add origin https://github.com/<OWNER>/<REPO>.git
 git push -u origin main
 ```
