@@ -1,4 +1,11 @@
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { CURRENCIES, LOCALES } from "@/i18n/config";
+import {
+  getUiSettings,
+  setConfiguredCurrency,
+  setConfiguredLocale,
+} from "@/i18n/get-locale";
 import { ACCENT_SETTING_KEY, contrastWithWhite, getAccent, normalizeHex } from "@/lib/accent";
 import { BRANDING_KEYS, getBranding } from "@/lib/branding";
 import { prisma } from "@/lib/prisma";
@@ -21,8 +28,36 @@ export const settingsRouter = router({
       where: { key: { in: [SHOW_DATES_KEY] } },
     });
     const map = new Map(rows.map((row) => [row.key, row.value]));
-    return { showDates: map.get(SHOW_DATES_KEY) !== "false" };
+    const ui = await getUiSettings();
+    return {
+      showDates: map.get(SHOW_DATES_KEY) !== "false",
+      locale: ui.locale,
+      currency: ui.currency,
+      currencyLocked: ui.currencyLocked,
+    };
   }),
+
+  setLocale: permissionProcedure("settings.ui")
+    .input(z.object({ locale: z.enum(LOCALES) }))
+    .mutation(async ({ input }) => {
+      await setConfiguredLocale(input.locale);
+      return { ok: true, locale: input.locale };
+    }),
+
+  setCurrency: permissionProcedure("settings.ui")
+    .input(z.object({ currency: z.enum(CURRENCIES) }))
+    .mutation(async ({ input }) => {
+      try {
+        await setConfiguredCurrency(input.currency);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Currency change failed";
+        throw new TRPCError({
+          code: message.includes("first operation") ? "PRECONDITION_FAILED" : "BAD_REQUEST",
+          message,
+        });
+      }
+      return { ok: true, currency: input.currency };
+    }),
 
   setShowDates: permissionProcedure("settings.ui")
     .input(z.object({ showDates: z.boolean() }))

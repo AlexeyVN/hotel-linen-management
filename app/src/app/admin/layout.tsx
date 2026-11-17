@@ -1,53 +1,55 @@
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { AdminShell, type NavEntry } from "@/components/admin-shell";
+import { getConfiguredLocale } from "@/i18n/get-locale";
 import { getCurrentUser } from "@/lib/auth";
 import { getBranding } from "@/lib/branding";
 import { hasPermission, type PermissionCode } from "@/lib/rbac";
 
 type NavConfig =
-  | { href: string; label: string; permission: PermissionCode }
+  | { href: string; labelKey: string; permission: PermissionCode }
   | {
-      label: string;
-      items: Array<{ href: string; label: string; permission: PermissionCode }>;
+      labelKey: string;
+      items: Array<{ href: string; labelKey: string; permission: PermissionCode }>;
     };
 
 const NAV: NavConfig[] = [
-  { href: "/admin", label: "Обзор", permission: "rooms.read" },
+  { href: "/admin", labelKey: "overview", permission: "rooms.read" },
   {
-    label: "Склад",
+    labelKey: "warehouseGroup",
     items: [
-      { href: "/admin/catalog", label: "Справочник", permission: "catalog.manage" },
-      { href: "/admin/warehouse", label: "Склад", permission: "warehouse.read" },
+      { href: "/admin/catalog", labelKey: "catalog", permission: "catalog.manage" },
+      { href: "/admin/warehouse", labelKey: "warehouse", permission: "warehouse.read" },
     ],
   },
   {
-    label: "Документы",
+    labelKey: "documents",
     items: [
-      { href: "/admin/receive", label: "Приёмка", permission: "warehouse.receive" },
-      { href: "/admin/distribute", label: "Раздача", permission: "distribution.create" },
-      { href: "/admin/return", label: "Возврат", permission: "return.create" },
-      { href: "/admin/writeoff", label: "Списание", permission: "writeoff.create" },
-      { href: "/admin/audit", label: "Инвентаризация", permission: "audit.create" },
-      { href: "/admin/qr", label: "QR-коды", permission: "rooms.read" },
+      { href: "/admin/receive", labelKey: "receive", permission: "warehouse.receive" },
+      { href: "/admin/distribute", labelKey: "distribute", permission: "distribution.create" },
+      { href: "/admin/return", labelKey: "return", permission: "return.create" },
+      { href: "/admin/writeoff", labelKey: "writeoff", permission: "writeoff.create" },
+      { href: "/admin/audit", labelKey: "audit", permission: "audit.create" },
+      { href: "/admin/qr", labelKey: "qr", permission: "rooms.read" },
     ],
   },
   {
-    label: "Уборка",
+    labelKey: "cleaningGroup",
     items: [
-      { href: "/admin/cleaning", label: "Уборка", permission: "cleaning.manage" },
-      { href: "/admin/maids", label: "Горничные", permission: "cleaning.manage" },
-      { href: "/admin/checklists", label: "Чек-листы", permission: "cleaning.manage" },
+      { href: "/admin/cleaning", labelKey: "cleaning", permission: "cleaning.manage" },
+      { href: "/admin/maids", labelKey: "maids", permission: "cleaning.manage" },
+      { href: "/admin/checklists", labelKey: "checklists", permission: "cleaning.manage" },
     ],
   },
-  { href: "/admin/reports", label: "Отчёты", permission: "reports.view" },
+  { href: "/admin/reports", labelKey: "reports", permission: "reports.view" },
   {
-    label: "Настройки",
+    labelKey: "settingsGroup",
     items: [
-      { href: "/admin/settings", label: "Общие настройки", permission: "settings.ui" },
-      { href: "/admin/rooms", label: "Номера и типы комнат", permission: "rooms.read" },
-      { href: "/admin/users", label: "Пользователи", permission: "users.manage" },
-      { href: "/admin/roles", label: "Роли", permission: "roles.manage" },
-      { href: "/admin/settings/1c", label: "Интеграция 1С", permission: "settings.integration" },
+      { href: "/admin/settings", labelKey: "settings", permission: "settings.ui" },
+      { href: "/admin/rooms", labelKey: "rooms", permission: "rooms.read" },
+      { href: "/admin/users", labelKey: "users", permission: "users.manage" },
+      { href: "/admin/roles", labelKey: "roles", permission: "roles.manage" },
+      { href: "/admin/settings/1c", labelKey: "integration", permission: "settings.integration" },
     ],
   },
 ];
@@ -61,22 +63,28 @@ export default async function AdminLayout({
   if (!user) redirect("/login");
   if (user.roleCode === "MAID") redirect("/m");
 
+  const locale = await getConfiguredLocale();
+  const [t, tRoles] = await Promise.all([
+    getTranslations({ locale, namespace: "nav" }),
+    getTranslations({ locale, namespace: "roles" }),
+  ]);
+
   const nav: NavEntry[] = [];
   for (const node of NAV) {
     if ("items" in node) {
       const items = node.items
         .filter((item) => hasPermission(user, item.permission))
-        .map(({ href, label }) => ({ href, label }));
-      if (items.length > 0) nav.push({ label: node.label, items });
+        .map(({ href, labelKey }) => ({ href, label: t(labelKey) }));
+      if (items.length > 0) nav.push({ label: t(node.labelKey), items });
     } else if (hasPermission(user, node.permission)) {
-      nav.push({ href: node.href, label: node.label });
+      nav.push({ href: node.href, label: t(node.labelKey) });
     }
   }
   const branding = await getBranding();
 
   return (
     <AdminShell
-      user={{ fullName: user.fullName, roleName: user.roleName }}
+      user={{ fullName: user.fullName, roleName: tRoles(user.roleCode) }}
       nav={nav}
       branding={{ hotelName: branding.hotelName, logoUrl: branding.logoUrl }}
     >

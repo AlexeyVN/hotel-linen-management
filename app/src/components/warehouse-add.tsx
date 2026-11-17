@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { formatKopecks } from "@/lib/money";
+import { useMoney } from "@/components/currency-provider";
 import { trpc } from "@/lib/trpc-client";
 
 function newOpId(): string {
@@ -27,6 +27,7 @@ function errorText(error: unknown): string {
 }
 
 export function WarehouseAddForm({ initialItemId }: { initialItemId?: string }) {
+  const money = useMoney();
   const router = useRouter();
   const utils = trpc.useUtils();
   const catalogQuery = trpc.catalog.list.useQuery();
@@ -97,7 +98,7 @@ export function WarehouseAddForm({ initialItemId }: { initialItemId?: string }) 
             <option value="">— выберите —</option>
             {items.map((item) => (
               <option key={item.id} value={item.id}>
-                {item.name} ({item.unit}) · {formatKopecks(item.priceKopecks)}
+                {item.name} ({item.unit}) · {money(item.priceKopecks)}
               </option>
             ))}
           </select>
@@ -130,8 +131,8 @@ export function WarehouseAddForm({ initialItemId }: { initialItemId?: string }) 
       </div>
       {selected ? (
         <p className="text-xs text-muted-foreground">
-          Цена из справочника: {formatKopecks(selected.priceKopecks)} · сумма:{" "}
-          {formatKopecks(total)}
+          Цена из справочника: {money(selected.priceKopecks)} · сумма:{" "}
+          {money(total)}
         </p>
       ) : null}
       {error ? (

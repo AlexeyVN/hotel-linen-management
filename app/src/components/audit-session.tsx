@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { formatKopecks } from "@/lib/money";
+import { useMoney } from "@/components/currency-provider";
 import { trpc } from "@/lib/trpc-client";
 
 function errorText(error: unknown): string {
@@ -16,6 +16,7 @@ function errorText(error: unknown): string {
 }
 
 export function AuditSessionView({ sessionId }: { sessionId: string }) {
+  const money = useMoney();
   const utils = trpc.useUtils();
   const sessionQuery = trpc.audit.get.useQuery({ sessionId });
   const saveDraft = trpc.audit.saveDraft.useMutation();
@@ -92,7 +93,7 @@ export function AuditSessionView({ sessionId }: { sessionId: string }) {
       setNotice(
         `Инвентаризация проведена. Расхождений: ${result.summary.changed} ` +
           `(излишек ${result.summary.increase}, недостача ${result.summary.decrease}) · ` +
-          `стоимость расхождений ${formatKopecks(result.summary.valueKopecks)}.`,
+          `стоимость расхождений ${money(result.summary.valueKopecks)}.`,
       );
       await utils.audit.get.invalidate({ sessionId });
       await utils.audit.list.invalidate();
@@ -226,14 +227,14 @@ export function AuditSessionView({ sessionId }: { sessionId: string }) {
                       {delta > 0 ? `+${delta}` : delta === 0 ? "0" : String(delta)}
                     </td>
                     <td className="whitespace-nowrap py-2 pl-3 text-right tabular-nums">
-                      {formatKopecks(line.priceKopecks)}
+                      {money(line.priceKopecks)}
                     </td>
                     <td
                       className={`whitespace-nowrap py-2 pl-3 text-right tabular-nums ${
                         delta > 0 ? "text-green-700" : delta < 0 ? "text-destructive" : ""
                       }`}
                     >
-                      {formatKopecks(delta * line.priceKopecks)}
+                      {money(delta * line.priceKopecks)}
                     </td>
                     {showDates ? (
                       <td className="whitespace-nowrap py-2 pl-4 text-muted-foreground">
@@ -251,9 +252,9 @@ export function AuditSessionView({ sessionId }: { sessionId: string }) {
           </table>
 
           <p className="mt-3 text-sm">
-            Стоимость расхождений: <strong>{formatKopecks(valueTotals.value)}</strong>
-            {" · "}излишек {formatKopecks(valueTotals.surplus)}
-            {" · "}недостача {formatKopecks(valueTotals.shortage)}
+            Стоимость расхождений: <strong>{money(valueTotals.value)}</strong>
+            {" · "}излишек {money(valueTotals.surplus)}
+            {" · "}недостача {money(valueTotals.shortage)}
           </p>
 
           {isDraft ? (

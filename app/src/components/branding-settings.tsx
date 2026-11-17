@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ACCENT_COLORS, contrastWithWhite, normalizeHex } from "@/lib/accent-colors";
+import { useTranslations } from "next-intl";
 import { trpc } from "@/lib/trpc-client";
 
 function errorText(error: unknown): string {
@@ -41,6 +42,7 @@ const CHECKERBOARD: React.CSSProperties = {
 };
 
 export function BrandingSettings() {
+  const tBranding = useTranslations("branding");
   const router = useRouter();
   const utils = trpc.useUtils();
   const brandingQuery = trpc.settings.brandingGet.useQuery();
@@ -123,7 +125,7 @@ export function BrandingSettings() {
         const payload = (await response.json().catch(() => ({}))) as { error?: string };
         throw new Error(payload.error ?? "Не удалось удалить логотип");
       }
-      await refreshBranding("Логотип удалён");
+      await refreshBranding(tBranding("logoDeleted"));
     } catch (removeError) {
       setError(errorText(removeError));
     }
@@ -138,7 +140,7 @@ export function BrandingSettings() {
         responsibleName,
         responsiblePosition,
       });
-      await refreshBranding("Реквизиты сохранены");
+      await refreshBranding(tBranding("textsSaved"));
     } catch (mutationError) {
       setError(errorText(mutationError));
     }
@@ -154,7 +156,7 @@ export function BrandingSettings() {
         throw new Error("Цвет слишком светлый для белого текста — выберите темнее");
       }
       await setAccent.mutateAsync({ hex });
-      await refreshBranding("Цвет интерфейса сохранён");
+      await refreshBranding(tBranding("accentSaved"));
     } catch (mutationError) {
       setError(errorText(mutationError));
     }
@@ -163,7 +165,7 @@ export function BrandingSettings() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Оформление: логотип, цвет, реквизиты</CardTitle>
+        <CardTitle>{tBranding("title")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap items-start gap-4">
@@ -179,17 +181,17 @@ export function BrandingSettings() {
                 className="max-h-full max-w-full object-contain"
               />
             ) : (
-              <span className="text-sm text-muted-foreground">Логотип не загружен</span>
+              <span className="text-sm text-muted-foreground">{tBranding("logoNotLoaded")}</span>
             )}
           </div>
           <div className="space-y-2 text-sm">
             <p className="text-muted-foreground">
-              PNG с прозрачностью, до 1600 px по большей стороне (уменьшается автоматически).
-              JPEG/WebP будут преобразованы в PNG.
+              {tBranding("hint1")}
+              
             </p>
             {branding?.logoWidth && branding.logoHeight ? (
               <p className="text-xs text-muted-foreground">
-                Текущий размер: {branding.logoWidth}×{branding.logoHeight} px
+                {tBranding("currentSize")}: {branding.logoWidth}×{branding.logoHeight} px
               </p>
             ) : null}
             <div className="flex flex-wrap gap-2">
@@ -203,7 +205,7 @@ export function BrandingSettings() {
                 }}
               />
               <Button variant="outline" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
-                {uploading ? "Загружаем…" : branding?.logoUrl ? "Заменить логотип" : "Загрузить логотип"}
+                {uploading ? tBranding("uploading") : branding?.logoUrl ? tBranding("replace") : tBranding("upload")}
               </Button>
               {branding?.logoUrl ? (
                 <Button variant="outline" onClick={removeLogo}>
@@ -216,10 +218,10 @@ export function BrandingSettings() {
 
         <div className="space-y-3 border-t pt-4">
           <div>
-            <p className="text-sm font-medium">Цвет подсветки</p>
+            <p className="text-sm font-medium">{tBranding("accentTitle")}</p>
             <p className="text-xs text-muted-foreground">
-              Кнопки, активные пункты меню, ссылки и фокус. Для белого текста — только
-              контраст ≥ 4.5:1.
+              {tBranding("accentHint")}
+              
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -243,40 +245,40 @@ export function BrandingSettings() {
           <div className="flex flex-wrap items-center gap-2">
             <input
               type="color"
-              aria-label="Свой цвет"
+              aria-label={tBranding("customColor")}
               value={accentHex}
               onChange={(event) => setAccentHex(event.target.value)}
               className="h-10 w-14 cursor-pointer rounded-md border bg-background p-1"
             />
             <Input
-              aria-label="HEX цвета"
+              aria-label={tBranding("hexColor")}
               value={accentHex}
               onChange={(event) => setAccentHex(event.target.value)}
               className="w-32 font-mono"
             />
             <span className="text-xs text-muted-foreground">
-              контраст: {contrastWithWhite(accentHex).toFixed(2)}:1
+              {tBranding("contrast")}: {contrastWithWhite(accentHex).toFixed(2)}:1
             </span>
             <Button onClick={saveAccent} disabled={setAccent.isPending}>
-              {setAccent.isPending ? "Применяем…" : "Применить цвет"}
+              {setAccent.isPending ? tBranding("applying") : tBranding("apply")}
             </Button>
           </div>
         </div>
 
         <div className="grid gap-3 md:grid-cols-3">
           <label className="text-sm">
-            <span className="mb-1 block text-muted-foreground">Название отеля</span>
+            <span className="mb-1 block text-muted-foreground">{tBranding("hotelName")}</span>
             <Input value={hotelName} onChange={(event) => setHotelName(event.target.value)} />
           </label>
           <label className="text-sm">
-            <span className="mb-1 block text-muted-foreground">Ответственный: ФИО</span>
+            <span className="mb-1 block text-muted-foreground">{tBranding("responsibleName")}</span>
             <Input
               value={responsibleName}
               onChange={(event) => setResponsibleName(event.target.value)}
             />
           </label>
           <label className="text-sm">
-            <span className="mb-1 block text-muted-foreground">Ответственный: должность</span>
+            <span className="mb-1 block text-muted-foreground">{tBranding("responsiblePosition")}</span>
             <Input
               value={responsiblePosition}
               onChange={(event) => setResponsiblePosition(event.target.value)}
@@ -292,7 +294,7 @@ export function BrandingSettings() {
         {notice ? <p className="text-sm text-green-700">{notice}</p> : null}
 
         <Button onClick={saveTexts} disabled={updateBranding.isPending}>
-          {updateBranding.isPending ? "Сохраняем…" : "Сохранить реквизиты"}
+          {updateBranding.isPending ? tBranding("saving") : tBranding("save")}
         </Button>
       </CardContent>
     </Card>

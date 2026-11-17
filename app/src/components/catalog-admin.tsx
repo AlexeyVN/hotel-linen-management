@@ -5,7 +5,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { formatKopecks, kopecksToInput, parseRublesToKopecks } from "@/lib/money";
+import { kopecksToInput, parseRublesToKopecks } from "@/lib/money";
+import { useMoney } from "@/components/currency-provider";
 import { trpc } from "@/lib/trpc-client";
 
 function errorText(error: unknown): string {
@@ -68,6 +69,7 @@ function XIcon() {
 }
 
 export function CatalogAdmin() {
+  const money = useMoney();
   const utils = trpc.useUtils();
   const catalogQuery = trpc.catalog.list.useQuery();
   const categoriesQuery = trpc.items.categories.useQuery();
@@ -345,7 +347,7 @@ export function CatalogAdmin() {
                             aria-label="Цена, рубли"
                           />
                         ) : (
-                          formatKopecks(item.priceKopecks)
+                          money(item.priceKopecks)
                         )}
                       </td>
                       <td className="whitespace-nowrap border-b px-1.5 py-2 text-right tabular-nums">

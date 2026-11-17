@@ -1,21 +1,28 @@
 import type { Metadata, Viewport } from "next";
 import type { CSSProperties } from "react";
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages, getTranslations } from "next-intl/server";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { CurrencyProvider } from "@/components/currency-provider";
 import { getAccent } from "@/lib/accent";
 import { getBranding } from "@/lib/branding";
+import { getConfiguredCurrency, getConfiguredLocale } from "@/i18n/get-locale";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const branding = await getBranding();
-  const hotelName = branding.hotelName.trim() || "Учёт белья";
-
+  const [branding, locale] = await Promise.all([
+    getBranding(),
+    getConfiguredLocale(),
+  ]);
+  const t = await getTranslations({ locale, namespace: "meta" });
+  const hotelName = branding.hotelName.trim() || "Hotel";
   return {
     title: {
-      default: `${hotelName} — отель`,
+      default: t("title", { hotel: hotelName }),
       template: `%s — ${hotelName}`,
     },
     applicationName: hotelName,
-    description: `Учёт постельного белья, химии и инвентаря отеля «${hotelName}»`,
+    description: t("description", { hotel: hotelName }),
     manifest: "/api/manifest",
     appleWebApp: {
       capable: true,
@@ -36,16 +43,25 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const accent = await getAccent();
+  const [accent, locale, messages, currency] = await Promise.all([
+    getAccent(),
+    getConfiguredLocale(),
+    getMessages(),
+    getConfiguredCurrency(),
+  ]);
   const style = {
     "--primary": accent.hsl,
     "--primary-foreground": "0 0% 100%",
   } as CSSProperties;
 
   return (
-    <html lang="ru">
+    <html lang={locale}>
       <body className="min-h-screen antialiased" style={style}>
-        <Providers>{children}</Providers>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <CurrencyProvider currency={currency}>
+            <Providers>{children}</Providers>
+          </CurrencyProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { getConfiguredLocale, getConfiguredCurrency } from "@/i18n/get-locale";
 import { computeLowStock } from "@/lib/domain/reports";
 import { getCurrentUser } from "@/lib/auth";
 import { getExcelBranding } from "@/lib/branding";
@@ -43,12 +44,21 @@ export async function GET(request: NextRequest) {
 
   const url = new URL(request.url);
   const report = url.searchParams.get("report") ?? "stock";
+  const [locale, currency] = await Promise.all([getConfiguredLocale(), getConfiguredCurrency()]);
+  const currencySymbol = currency === "USD" ? "$" : currency === "EUR" ? "€" : "₽";
+  const headersWithCurrency = (headers: string[]) =>
+    headers.map((header) => header.replace("₽", currencySymbol));
+  const STOCK_HEADERS_I18N = headersWithCurrency(STOCK_HEADERS);
+  const MOVEMENTS_HEADERS_I18N = headersWithCurrency(MOVEMENTS_HEADERS);
+  const LOW_STOCK_HEADERS_I18N = headersWithCurrency(LOW_STOCK_HEADERS);
   const excelBranding = await getExcelBranding(user.fullName);
   const brandingFor = (reportTitle: string, subtitle?: string) => ({
     ...excelBranding,
     reportTitle,
     subtitle,
     generatedAt: new Date(),
+    locale,
+    currency,
   });
 
   let buffer: Buffer;
@@ -68,7 +78,7 @@ export async function GET(request: NextRequest) {
     });
     buffer = await buildWorkbook(
       "Движения",
-      MOVEMENTS_HEADERS,
+      MOVEMENTS_HEADERS_I18N,
       movementsRows(
         operations.map((operation) => ({
           documentDate: operation.documentDate,
@@ -125,7 +135,7 @@ export async function GET(request: NextRequest) {
     const price = new Map(rules.map((rule) => [rule.itemId, rule.item.priceKopecks]));
     buffer = await buildWorkbook(
       "Дефицит",
-      LOW_STOCK_HEADERS,
+      LOW_STOCK_HEADERS_I18N,
       lowStockRows(
         issues.map((issue) => ({
           ...issue,
@@ -249,7 +259,7 @@ export async function GET(request: NextRequest) {
     });
     buffer = await buildWorkbook(
       "Остатки",
-      STOCK_HEADERS,
+      STOCK_HEADERS_I18N,
       stockRows(
         items.map((item) => ({
           name: item.name,

@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { OneCAdapter } from "./adapters/onec";
 import { stubAdapter } from "./adapters/stub";
 import { getIntegrationConfig, getRoomStatusConfig, recordSyncError, setSetting } from "./config";
+import { assertRubCurrency } from "./currency";
 import type { ErpAdapter, ErpOperationDto } from "./contract";
 
 export const MAX_OUTBOX_ATTEMPTS = 8;
@@ -16,6 +17,7 @@ export const MAX_OUTBOX_ATTEMPTS = 8;
 export async function buildAdapter(): Promise<ErpAdapter | null> {
   const config = await getIntegrationConfig();
   if (!config.enabled) return null;
+  await assertRubCurrency();
   if (config.mode === "stub") return stubAdapter;
   if (!config.baseUrl) throw new Error("Не задан URL HTTP-сервиса 1С");
   const roomStatusConfig = await getRoomStatusConfig();

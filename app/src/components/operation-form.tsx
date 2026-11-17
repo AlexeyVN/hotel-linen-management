@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { formatKopecks } from "@/lib/money";
+import { useMoney } from "@/components/currency-provider";
 import { trpc } from "@/lib/trpc-client";
 
 type Mode = "RECEIVE" | "DISTRIBUTE" | "RETURN" | "WRITE_OFF";
@@ -42,6 +42,7 @@ const TITLES: Record<Mode, string> = {
 };
 
 export function OperationForm({ mode }: { mode: Mode }) {
+  const money = useMoney();
   const router = useRouter();
   const utils = trpc.useUtils();
 
@@ -267,7 +268,7 @@ export function OperationForm({ mode }: { mode: Mode }) {
                   <span className="pb-2 text-xs text-muted-foreground">
                     на складе: {selected.warehouseQty}
                     {mode === "RECEIVE"
-                      ? ` · цена: ${formatKopecks(selected.priceKopecks)}`
+                      ? ` · цена: ${money(selected.priceKopecks)}`
                       : ""}
                   </span>
                 ) : null}

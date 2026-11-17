@@ -1,11 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc-client";
 
 export function ShowDatesToggle({ initial }: { initial: boolean }) {
   const router = useRouter();
+  const t = useTranslations("settings");
   const utils = trpc.useUtils();
   const setShowDates = trpc.settings.setShowDates.useMutation();
   const [checked, setChecked] = useState(initial);
@@ -31,7 +33,7 @@ export function ShowDatesToggle({ initial }: { initial: boolean }) {
         disabled={pending}
         onChange={(event) => toggle(event.target.checked)}
       />
-      Показывать даты в документах
+      {t("showDates")}
     </label>
   );
 }

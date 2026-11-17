@@ -1,6 +1,7 @@
 "use client";
 
 import { TRPCClientError } from "@trpc/client";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,7 +28,10 @@ interface Status {
 
 export function IntegrationAdmin() {
   const utils = trpc.useUtils();
+  const tSettings = useTranslations("settings");
   const statusQuery = trpc.integration.status.useQuery();
+  const uiSettingsQuery = trpc.settings.get.useQuery();
+  const currency = uiSettingsQuery.data?.currency;
   const save = trpc.integration.save.useMutation();
   const ping = trpc.integration.ping.useMutation();
   const syncItemsNow = trpc.integration.syncItemsNow.useMutation();
@@ -110,6 +114,11 @@ export function IntegrationAdmin() {
         </p>
       ) : null}
       {notice ? <p className="text-sm text-green-700">{notice}</p> : null}
+      {currency && currency !== "RUB" ? (
+        <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          {tSettings("integrationCurrencyGuard")}
+        </p>
+      ) : null}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[

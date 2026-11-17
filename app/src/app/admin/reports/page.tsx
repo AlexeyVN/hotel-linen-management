@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { computeLowStock } from "@/lib/domain/reports";
-import { formatKopecks } from "@/lib/money";
+import { getUiSettings } from "@/i18n/get-locale";
+import { formatMoney } from "@/lib/money";
 import { hasPermission } from "@/lib/rbac";
 import { getShowDates } from "@/lib/settings";
 import { DataTable } from "@/components/ui/data-table";
@@ -43,6 +44,7 @@ export default async function ReportsPage({
   searchParams: Promise<{ report?: string; from?: string; to?: string }>;
 }) {
   const user = await getCurrentUser();
+  const { locale, currency } = await getUiSettings();
   if (!user || !hasPermission(user, "reports.view")) {
     return (
       <p role="alert" className="text-sm text-destructive">
@@ -101,6 +103,8 @@ export default async function ReportsPage({
 }
 
 async function StockReport({ showDates }: { showDates: boolean }) {
+  const { locale, currency } = await getUiSettings();
+  const money = (value: number) => formatMoney(value, locale, currency);
   const items = await prisma.item.findMany({
     where: { isActive: true },
     include: { category: true, warehouse: true },
@@ -115,7 +119,7 @@ async function StockReport({ showDates }: { showDates: boolean }) {
     <Card>
       <CardHeader>
         <CardTitle>
-          Остатки склада ({items.length}) · стоимость {formatKopecks(totalValue)}
+          Остатки склада ({items.length}) · стоимость {money(totalValue)}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -142,10 +146,10 @@ async function StockReport({ showDates }: { showDates: boolean }) {
                     {qty} {item.unit}
                   </td>
                   <td className="py-2 text-right tabular-nums">
-                    {formatKopecks(item.priceKopecks)}
+                    {money(item.priceKopecks)}
                   </td>
                   <td className="py-2 text-right tabular-nums">
-                    {formatKopecks(qty * item.priceKopecks)}
+                    {money(qty * item.priceKopecks)}
                   </td>
                   {showDates ? (
                     <td className="whitespace-nowrap py-2 pl-4 text-muted-foreground">
@@ -173,6 +177,8 @@ async function MovementsReport({
   to: string;
   showDates: boolean;
 }) {
+  const { locale, currency } = await getUiSettings();
+  const money = (value: number) => formatMoney(value, locale, currency);
   const fromDate = new Date(`${from}T00:00:00`);
   const toDate = new Date(`${to}T23:59:59`);
 
@@ -241,8 +247,8 @@ async function MovementsReport({
                       {operation.items.map((line) => (
                         <span key={line.id} className="block">
                           {line.item.name}: {line.qty} {line.item.unit} ×{" "}
-                          {formatKopecks(line.item.priceKopecks)} ={" "}
-                          {formatKopecks(line.qty * line.item.priceKopecks)}
+                          {money(line.item.priceKopecks)} ={" "}
+                          {money(line.qty * line.item.priceKopecks)}
                           {line.delta !== null && line.delta !== undefined
                             ? ` (Δ ${line.delta > 0 ? "+" : ""}${line.delta})`
                             : ""}
@@ -262,6 +268,8 @@ async function MovementsReport({
 }
 
 async function LowStockReport({ showDates }: { showDates: boolean }) {
+  const { locale, currency } = await getUiSettings();
+  const money = (value: number) => formatMoney(value, locale, currency);
   const [rooms, inventory, rules] = await Promise.all([
     prisma.room.findMany({ where: { isActive: true }, include: { roomType: true } }),
     prisma.roomInventory.findMany(),
@@ -303,7 +311,7 @@ async function LowStockReport({ showDates }: { showDates: boolean }) {
     <Card>
       <CardHeader>
         <CardTitle>
-          Дефицит в номерах ({issues.length}) · стоимость {formatKopecks(totalValue)}
+          Дефицит в номерах ({issues.length}) · стоимость {money(totalValue)}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -332,10 +340,10 @@ async function LowStockReport({ showDates }: { showDates: boolean }) {
                   <td className="py-2 text-right tabular-nums">{issue.min}</td>
                   <td className="py-2 text-right tabular-nums text-destructive">{issue.missing}</td>
                   <td className="py-2 text-right tabular-nums">
-                    {formatKopecks(price.get(issue.itemId) ?? 0)}
+                    {money(price.get(issue.itemId) ?? 0)}
                   </td>
                   <td className="py-2 text-right tabular-nums">
-                    {formatKopecks(issue.missing * (price.get(issue.itemId) ?? 0))}
+                    {money(issue.missing * (price.get(issue.itemId) ?? 0))}
                   </td>
                   {showDates ? (
                     <td className="py-2 whitespace-nowrap text-muted-foreground">

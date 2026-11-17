@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useTranslations } from "next-intl";
 import { trpc } from "@/lib/trpc-client";
 import { DataTable } from "@/components/ui/data-table";
 
@@ -15,6 +16,7 @@ function errorText(error: unknown): string {
 }
 
 export function RoomsAdmin({ canManage }: { canManage: boolean }) {
+  const t = useTranslations("rooms");
   const utils = trpc.useUtils();
   const roomsQuery = trpc.rooms.all.useQuery();
   const typesQuery = trpc.rooms.allTypes.useQuery();
@@ -105,7 +107,7 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
           ...floorPayload(editDraft.floorMode, editDraft.floor, editDraft.floorName),
           roomTypeId: editDraft.roomTypeId,
         }),
-      "Номер обновлён",
+      t("roomUpdated"),
     );
     setEditId(null);
   }
@@ -125,10 +127,10 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold">Номера и типы комнат</h1>
+        <h1 className="text-2xl font-semibold">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">
-          Список, добавление, фильтры. Типы комнат редактируются и используются в
-          минимальных остатках.
+          {t("intro")}
+          
         </p>
       </header>
 
@@ -143,7 +145,7 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
         <div className="grid gap-4 lg:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Добавить номер</CardTitle>
+              <CardTitle>{t("addRoom")}</CardTitle>
             </CardHeader>
             <CardContent>
               <form
@@ -160,7 +162,7 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
                           ? { newTypeName: roomForm.newTypeName.trim() }
                           : { roomTypeId: roomForm.roomTypeId || activeTypes[0]?.id || "" }),
                       }),
-                    "Номер добавлен",
+                    t("roomAdded"),
                   );
                   setRoomForm({
                     ...roomForm,
@@ -171,7 +173,7 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
                 }}
               >
                 <label className="text-sm">
-                  <span className="mb-1 block text-muted-foreground">Номер</span>
+                  <span className="mb-1 block text-muted-foreground">{t("number")}</span>
                   <Input
                     value={roomForm.number}
                     onChange={(event) => setRoomForm({ ...roomForm, number: event.target.value })}
@@ -180,7 +182,7 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
                   />
                 </label>
                 <label className="text-sm">
-                  <span className="mb-1 block text-muted-foreground">Этаж</span>
+                  <span className="mb-1 block text-muted-foreground">{t("floor")}</span>
                   <select
                     value={roomForm.floorMode}
                     onChange={(event) =>
@@ -191,13 +193,13 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
                     }
                     className="h-10 rounded-md border bg-background px-2 text-sm"
                   >
-                    <option value="number">Число</option>
-                    <option value="name">Название</option>
+                    <option value="number">{t("numberFloor")}</option>
+                    <option value="name">{t("typeName")}</option>
                   </select>
                 </label>
                 <label className="text-sm">
                   <span className="mb-1 block text-muted-foreground">
-                    {roomForm.floorMode === "number" ? "Номер этажа" : "Название этажа"}
+                    {roomForm.floorMode === "number" ? t("numberFloor") : t("floorName")}
                   </span>
                   {roomForm.floorMode === "number" ? (
                     <Input
@@ -215,14 +217,14 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
                       onChange={(event) =>
                         setRoomForm({ ...roomForm, floorName: event.target.value })
                       }
-                      placeholder="Например, «Бизнес-этаж»"
+                      placeholder={t("floorPlaceholder")}
                       required
                       className="w-44"
                     />
                   )}
                 </label>
                 <label className="text-sm">
-                  <span className="mb-1 block text-muted-foreground">Тип</span>
+                  <span className="mb-1 block text-muted-foreground">{t("type")}</span>
                   <select
                     value={roomForm.roomTypeId || activeTypes[0]?.id || ""}
                     onChange={(event) =>
@@ -238,13 +240,13 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
                   </select>
                 </label>
                 <label className="text-sm">
-                  <span className="mb-1 block text-muted-foreground">Новый тип (необязательно)</span>
+                  <span className="mb-1 block text-muted-foreground">{t("newType")}</span>
                   <Input
                     value={roomForm.newTypeName}
                     onChange={(event) =>
                       setRoomForm({ ...roomForm, newTypeName: event.target.value })
                     }
-                    placeholder="Создать тип"
+                    placeholder={t("newTypePlaceholder")}
                     className="w-40"
                   />
                 </label>
@@ -255,7 +257,7 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
                     (activeTypes.length === 0 && !roomForm.newTypeName.trim())
                   }
                 >
-                  Добавить
+                  {t("add")}
                 </Button>
               </form>
             </CardContent>
@@ -263,7 +265,7 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
 
           <Card>
             <CardHeader>
-              <CardTitle>Добавить тип комнаты</CardTitle>
+              <CardTitle>{t("addType")}</CardTitle>
             </CardHeader>
             <CardContent>
               <form
@@ -272,13 +274,13 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
                   event.preventDefault();
                   await run(
                     () => createType.mutateAsync({ code: typeForm.code, name: typeForm.name }),
-                    "Тип добавлен",
+                    t("typeAdded"),
                   );
                   setTypeForm({ code: "", name: "" });
                 }}
               >
                 <label className="text-sm">
-                  <span className="mb-1 block text-muted-foreground">Код</span>
+                  <span className="mb-1 block text-muted-foreground">{t("typeCode")}</span>
                   <Input
                     value={typeForm.code}
                     onChange={(event) => setTypeForm({ ...typeForm, code: event.target.value })}
@@ -288,7 +290,7 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
                   />
                 </label>
                 <label className="text-sm">
-                  <span className="mb-1 block text-muted-foreground">Название</span>
+                  <span className="mb-1 block text-muted-foreground">{t("typeName")}</span>
                   <Input
                     value={typeForm.name}
                     onChange={(event) => setTypeForm({ ...typeForm, name: event.target.value })}
@@ -296,7 +298,7 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
                   />
                 </label>
                 <Button type="submit" disabled={createType.isPending}>
-                  Добавить
+                  {t("add")}
                 </Button>
               </form>
             </CardContent>
@@ -304,22 +306,22 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
         </div>
       ) : (
         <p className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
-          Режим просмотра: создание, изменение и удаление номеров доступно администратору.
+          {t("viewOnly")}
         </p>
       )}
 
       {canManage ? (
         <Card>
         <CardHeader>
-          <CardTitle>Типы комнат</CardTitle>
+          <CardTitle>{t("types")}</CardTitle>
         </CardHeader>
         <CardContent>
           <DataTable minWidth="760px">
             <thead>
               <tr className="border-b text-left text-muted-foreground">
-                <th className="py-2 font-medium">Код</th>
-                <th className="py-2 font-medium">Название</th>
-                <th className="py-2 font-medium">Статус</th>
+                <th className="py-2 font-medium">{t("typeCode")}</th>
+                <th className="py-2 font-medium">{t("typeName")}</th>
+                <th className="py-2 font-medium">{t("status")}</th>
                 <th className="py-2" />
               </tr>
             </thead>
@@ -336,7 +338,7 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
                       className="h-9 w-48"
                     />
                   </td>
-                  <td className="py-2">{type.isActive ? "активен" : "выключен"}</td>
+                  <td className="py-2">{type.isActive ? t("active") : t("inactive")}</td>
                   <td className="py-2 text-right">
                     <div className="flex justify-end gap-2">
                       <Button
@@ -349,11 +351,11 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
                                 id: type.id,
                                 name: nameDraft[type.id] ?? type.name,
                               }),
-                            "Тип переименован",
+                            t("typeRenamed"),
                           )
                         }
                       >
-                        Сохранить
+                        {t("save")}
                       </Button>
                       <Button
                         size="sm"
@@ -361,11 +363,11 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
                         onClick={() =>
                           run(
                             () => setTypeActive.mutateAsync({ id: type.id, isActive: !type.isActive }),
-                            type.isActive ? "Тип выключен" : "Тип включён",
+                            type.isActive ? t("typeDisabled") : t("typeEnabled"),
                           )
                         }
                       >
-                        {type.isActive ? "Выключить" : "Включить"}
+                        {type.isActive ? t("disable") : t("enable")}
                       </Button>
                     </div>
                   </td>
@@ -379,18 +381,18 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Номера ({visibleRooms.length})</CardTitle>
+          <CardTitle>{t("rooms")} ({visibleRooms.length})</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-end gap-3">
             <label className="text-sm">
-              <span className="mb-1 block text-muted-foreground">Этаж</span>
+              <span className="mb-1 block text-muted-foreground">{t("floor")}</span>
               <select
                 value={floorFilter}
                 onChange={(event) => setFloorFilter(event.target.value)}
                 className="h-10 rounded-md border bg-background px-3"
               >
-                <option value="all">Все</option>
+                <option value="all">{t("all")}</option>
                 {floors.map((floor) => (
                   <option key={floor} value={String(floor)}>
                     {floor}
@@ -399,13 +401,13 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
               </select>
             </label>
             <label className="text-sm">
-              <span className="mb-1 block text-muted-foreground">Тип</span>
+              <span className="mb-1 block text-muted-foreground">{t("type")}</span>
               <select
                 value={typeFilter}
                 onChange={(event) => setTypeFilter(event.target.value)}
                 className="h-10 rounded-md border bg-background px-3"
               >
-                <option value="all">Все</option>
+                <option value="all">{t("all")}</option>
                 {types.map((type) => (
                   <option key={type.id} value={type.id}>
                     {type.name}
@@ -414,7 +416,7 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
               </select>
             </label>
             <label className="text-sm">
-              <span className="mb-1 block text-muted-foreground">Поиск</span>
+              <span className="mb-1 block text-muted-foreground">{t("search")}</span>
               <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
@@ -426,10 +428,10 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
           <DataTable minWidth="760px">
             <thead>
               <tr className="border-b text-left text-muted-foreground">
-                <th className="py-2 font-medium">Номер</th>
-                <th className="py-2 font-medium">Этаж</th>
-                <th className="py-2 font-medium">Тип</th>
-                <th className="py-2 font-medium">Статус</th>
+                <th className="py-2 font-medium">{t("number")}</th>
+                <th className="py-2 font-medium">{t("floor")}</th>
+                <th className="py-2 font-medium">{t("type")}</th>
+                <th className="py-2 font-medium">{t("status")}</th>
                 <th className="py-2" />
               </tr>
             </thead>
@@ -464,8 +466,8 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
                             }
                             className="h-9 rounded-md border bg-background px-1 text-xs"
                           >
-                            <option value="number">Число</option>
-                            <option value="name">Название</option>
+                            <option value="number">{t("numberFloor")}</option>
+                            <option value="name">{t("typeName")}</option>
                           </select>
                           {editDraft.floorMode === "number" ? (
                             <Input
@@ -513,23 +515,23 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
                         room.roomTypeName
                       )}
                     </td>
-                    <td className="py-2">{room.isActive ? "активен" : "выключен"}</td>
+                    <td className="py-2">{room.isActive ? t("active") : t("inactive")}</td>
                     <td className="py-2 text-right">
                       {canManage ? (
                         <div className="flex justify-end gap-2">
                           {editing ? (
                             <>
                               <Button size="sm" onClick={saveEdit} disabled={updateRoom.isPending}>
-                                Сохранить
+                                {t("save")}
                               </Button>
                               <Button size="sm" variant="outline" onClick={() => setEditId(null)}>
-                                Отмена
+                                {t("cancel")}
                               </Button>
                             </>
                           ) : (
                             <>
                               <Button size="sm" variant="outline" onClick={() => startEdit(room)}>
-                                Изменить
+                                {t("edit")}
                               </Button>
                               <Button
                                 size="sm"
@@ -541,7 +543,7 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
                                         id: room.id,
                                         isActive: !room.isActive,
                                       }),
-                                    room.isActive ? "Номер деактивирован" : "Номер активирован",
+                                    room.isActive ? t("roomDeactivated") : t("roomActivated"),
                                   )
                                 }
                               >
@@ -553,18 +555,18 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
                                 onClick={() => {
                                   if (
                                     !window.confirm(
-                                      `Удалить номер ${room.number}? Это возможно только без истории.`,
+                                      t("deleteConfirm", { number: room.number }),
                                     )
                                   ) {
                                     return;
                                   }
                                   void run(
                                     () => deleteRoom.mutateAsync({ id: room.id }),
-                                    "Номер удалён",
+                                    t("roomDeleted"),
                                   );
                                 }}
                               >
-                                Удалить
+                                {t("delete")}
                               </Button>
                             </>
                           )}

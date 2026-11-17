@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export function LoginForm({ callbackUrl = "/" }: { callbackUrl?: string }) {
   const router = useRouter();
+  const t = useTranslations("login");
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +26,7 @@ export function LoginForm({ callbackUrl = "/" }: { callbackUrl?: string }) {
       redirect: false,
     });
     if (result?.error) {
-      setError("Неверный логин или пароль. Проверьте раскладку и Caps Lock.");
+      setError(t("invalid"));
       setPending(false);
       return;
     }
@@ -35,7 +37,7 @@ export function LoginForm({ callbackUrl = "/" }: { callbackUrl?: string }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="login">Логин</Label>
+        <Label htmlFor="login">{t("login")}</Label>
         <Input
           id="login"
           name="login"
@@ -46,7 +48,7 @@ export function LoginForm({ callbackUrl = "/" }: { callbackUrl?: string }) {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="password">Пароль</Label>
+        <Label htmlFor="password">{t("password")}</Label>
         <Input
           id="password"
           name="password"
@@ -63,7 +65,7 @@ export function LoginForm({ callbackUrl = "/" }: { callbackUrl?: string }) {
         </p>
       ) : null}
       <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? "Проверяем…" : "Войти"}
+        {pending ? t("checking") : t("submit")}
       </Button>
     </form>
   );

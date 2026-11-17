@@ -196,6 +196,8 @@ export interface ReportBranding {
   responsibleName?: string;
   responsiblePosition?: string;
   logo?: { buffer: Buffer; width: number; height: number };
+  locale?: string;
+  currency?: string;
 }
 
 function columnLetter(column: number): string {
@@ -264,7 +266,7 @@ export async function buildWorkbook(
       sheet.getCell(3, 1).font = { italic: true, size: 11 };
     }
 
-    const generated = new Intl.DateTimeFormat("ru-RU", {
+    const generated = new Intl.DateTimeFormat(branding.locale ?? "ru-RU", {
       dateStyle: "short",
       timeStyle: "short",
     }).format(branding.generatedAt);

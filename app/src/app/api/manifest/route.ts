@@ -1,18 +1,24 @@
 import type { MetadataRoute } from "next";
+import { getTranslations } from "next-intl/server";
+import { getConfiguredLocale } from "@/i18n/get-locale";
 import { getBranding } from "@/lib/branding";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function GET() {
-  const branding = await getBranding();
-  const hotelName = branding.hotelName.trim() || "Учёт белья";
+  const locale = await getConfiguredLocale();
+  const [branding, t] = await Promise.all([
+    getBranding(),
+    getTranslations({ locale, namespace: "meta" }),
+  ]);
+  const hotelName = branding.hotelName.trim() || "Hotel";
 
   const manifest: MetadataRoute.Manifest = {
-    name: `${hotelName} — горничная`,
+    name: `${hotelName} — ${t("housekeeping")}`,
     short_name: hotelName,
-    description: `Инвентаризация номеров и раздача белья в отеле «${hotelName}»`,
-    lang: "ru",
+    description: t("description", { hotel: hotelName }),
+    lang: locale,
     start_url: "/m",
     scope: "/",
     display: "standalone",

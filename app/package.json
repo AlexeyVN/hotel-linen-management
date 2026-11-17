@@ -1,6 +1,6 @@
 {
   "name": "hotel-linen-management",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "private": true,
   "license": "Apache-2.0",
   "author": "Vlasevskii Aleksei Nikolaevich",
@@ -47,6 +47,7 @@
     "jsqr": "^1.4.0",
     "next": "^15.1.0",
     "next-auth": "^4.24.15",
+    "next-intl": "^4.15.1",
     "pino": "^9.5.0",
     "qrcode": "^1.5.4",
     "react": "^19.0.0",

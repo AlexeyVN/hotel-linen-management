@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShowDatesToggle } from "@/components/show-dates-toggle";
 import { WarehouseAddForm } from "@/components/warehouse-add";
-import { formatKopecks } from "@/lib/money";
+import { getUiSettings } from "@/i18n/get-locale";
+import { formatMoney } from "@/lib/money";
 import { getShowDates } from "@/lib/settings";
 import { prisma } from "@/lib/prisma";
 import { DataTable } from "@/components/ui/data-table";
@@ -13,6 +14,8 @@ export default async function WarehousePage({
   searchParams: Promise<{ category?: string; add?: string }>;
 }) {
   const params = await searchParams;
+  const { locale, currency } = await getUiSettings();
+  const money = (value: number) => formatMoney(value, locale, currency);
   const categoryId = params.category && params.category !== "all" ? params.category : undefined;
 
   const [categories, items, showDates] = await Promise.all([
@@ -90,7 +93,7 @@ export default async function WarehousePage({
 
       <Card>
         <CardHeader>
-          <CardTitle>Остатки · стоимость {formatKopecks(totalValue)}</CardTitle>
+          <CardTitle>Остатки · стоимость {money(totalValue)}</CardTitle>
         </CardHeader>
         <CardContent>
           {items.length === 0 ? (
@@ -125,10 +128,10 @@ export default async function WarehousePage({
                         {qty} {item.unit}
                       </td>
                       <td className="py-2 text-right tabular-nums">
-                        {formatKopecks(item.priceKopecks)}
+                        {money(item.priceKopecks)}
                       </td>
                       <td className="py-2 text-right tabular-nums">
-                        {formatKopecks(qty * item.priceKopecks)}
+                        {money(qty * item.priceKopecks)}
                       </td>
                       {showDates ? (
                         <td className="whitespace-nowrap py-2 pl-4 text-muted-foreground">

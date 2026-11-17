@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { BrandMark } from "@/components/brand-mark";
 import { LoginForm } from "@/components/login-form";
+import { getConfiguredLocale } from "@/i18n/get-locale";
 import { getCurrentUser } from "@/lib/auth";
 import { getBranding } from "@/lib/branding";
 import { defaultRouteForRole } from "@/lib/rbac";
@@ -16,7 +18,11 @@ export default async function LoginPage({
 
   const params = await searchParams;
   const callbackUrl = safeInternalPath(params.callbackUrl);
-  const branding = await getBranding();
+  const locale = await getConfiguredLocale();
+  const [branding, t] = await Promise.all([
+    getBranding(),
+    getTranslations({ locale, namespace: "login" }),
+  ]);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-muted px-4">
@@ -28,17 +34,12 @@ export default async function LoginPage({
             className="max-h-14 w-auto max-w-[220px] object-contain"
           />
         </div>
-        <h1 className="text-xl font-semibold">{branding.hotelName || "Учёт белья"}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Вход для всех сотрудников отеля
-        </p>
+        <h1 className="text-xl font-semibold">{branding.hotelName || t("heading")}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t("heading")}</p>
         <div className="mt-6">
           <LoginForm callbackUrl={callbackUrl} />
         </div>
-        <p className="mt-4 text-xs text-muted-foreground">
-          Горничная после входа попадает в мобильный кабинет «Мои уборки».
-          Администратор и менеджер — в панель управления.
-        </p>
+        <p className="mt-4 text-xs text-muted-foreground">{t("hint")}</p>
       </div>
     </main>
   );

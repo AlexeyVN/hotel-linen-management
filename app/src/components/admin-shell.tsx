@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/brand-mark";
@@ -40,6 +41,7 @@ export function AdminShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const tCommon = useTranslations("common");
   const activeGroup = nav
     .filter(isGroup)
     .find((group) => group.items.some((item) => isActive(pathname, item.href)))?.label;
@@ -144,7 +146,7 @@ export function AdminShell({
             className="w-full justify-start"
             onClick={() => signOut({ callbackUrl: "/login" })}
           >
-            Выйти
+            {tCommon("logout")}
           </Button>
         </div>
       </aside>
