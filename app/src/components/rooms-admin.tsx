@@ -193,7 +193,7 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
                     }
                     className="h-10 rounded-md border bg-background px-2 text-sm"
                   >
-                    <option value="number">{t("numberFloor")}</option>
+                    <option value="number">{t("numberMode")}</option>
                     <option value="name">{t("typeName")}</option>
                   </select>
                 </label>
@@ -466,7 +466,7 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
                             }
                             className="h-9 rounded-md border bg-background px-1 text-xs"
                           >
-                            <option value="number">{t("numberFloor")}</option>
+                            <option value="number">{t("numberMode")}</option>
                             <option value="name">{t("typeName")}</option>
                           </select>
                           {editDraft.floorMode === "number" ? (
@@ -547,7 +547,7 @@ export function RoomsAdmin({ canManage }: { canManage: boolean }) {
                                   )
                                 }
                               >
-                                {room.isActive ? "Деактивировать" : "Активировать"}
+                                {room.isActive ? t("deactivate") : t("activate")}
                               </Button>
                               <Button
                                 size="sm"

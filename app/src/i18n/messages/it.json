@@ -194,7 +194,9 @@
                   "typeCode":  "Codice",
                   "roomActivated":  "Camera attivata",
                   "delete":  "Elimina",
-                  "status":  "Stato"
+                  "status":  "Stato",
+                  "numberMode":  "Numero",
+                  "nameMode":  "Nome"
               },
     "branding":  {
                      "currentSize":  "Dimensione attuale",

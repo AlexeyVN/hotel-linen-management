@@ -194,7 +194,9 @@
                   "typeCode":  "Código",
                   "roomActivated":  "Habitación activada",
                   "delete":  "Eliminar",
-                  "status":  "Estado"
+                  "status":  "Estado",
+                  "numberMode":  "Número",
+                  "nameMode":  "Nombre"
               },
     "branding":  {
                      "currentSize":  "Tamaño actual",

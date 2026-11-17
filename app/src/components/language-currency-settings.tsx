@@ -21,7 +21,7 @@ export function LanguageCurrencySettings() {
 
   const [locale, setLocaleState] = useState<Locale>("en");
   const [currency, setCurrencyState] = useState<Currency>("USD");
-  const [notice, setNotice] = useState<string | null>(null);
+  const [noticeKey, setNoticeKey] = useState<"languageSaved" | "currencySaved" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const data = query.data;
@@ -34,7 +34,7 @@ export function LanguageCurrencySettings() {
 
   async function save() {
     setError(null);
-    setNotice(null);
+    setNoticeKey(null);
     if (!data) return;
     try {
       if (locale !== data.locale) {
@@ -50,7 +50,7 @@ export function LanguageCurrencySettings() {
       }
       await utils.settings.get.invalidate();
       router.refresh();
-      setNotice(locale !== data.locale ? t("languageSaved") : t("currencySaved"));
+      setNoticeKey(locale !== data.locale ? "languageSaved" : "currencySaved");
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Error");
     }
@@ -102,7 +102,7 @@ export function LanguageCurrencySettings() {
           <p className="text-xs text-muted-foreground">{t("operationsLock")}</p>
         )}
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        {notice ? <p className="text-sm text-green-700">{notice}</p> : null}
+        {noticeKey ? <p className="text-sm text-green-700">{t(noticeKey)}</p> : null}
 
         <Button onClick={save} disabled={setLocale.isPending || setCurrency.isPending || !data}>
           {setLocale.isPending || setCurrency.isPending ? tCommon("saving") : tCommon("save")}

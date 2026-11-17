@@ -194,7 +194,9 @@
                   "typeCode":  "Code",
                   "roomActivated":  "Zimmer aktiviert",
                   "delete":  "Löschen",
-                  "status":  "Status"
+                  "status":  "Status",
+                  "numberMode":  "Zahl",
+                  "nameMode":  "Name"
               },
     "branding":  {
                      "currentSize":  "Aktuelle Größe",

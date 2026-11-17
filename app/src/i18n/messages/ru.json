@@ -194,7 +194,9 @@
                   "typeCode":  "Код",
                   "roomActivated":  "Номер активирован",
                   "delete":  "Удалить",
-                  "status":  "Статус"
+                  "status":  "Статус",
+                  "numberMode":  "Число",
+                  "nameMode":  "Название"
               },
     "branding":  {
                      "currentSize":  "Текущий размер",

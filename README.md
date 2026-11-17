@@ -1,6 +1,6 @@
 # Белая пристань — учёт постельного белья
 
-**v2.3 (M1–M14 + этап 2 + 1С + гибкие номера + i18n)**
+**v2.3.1 (M1–M14 + этап 2 + 1С + гибкие номера + i18n)**
 
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![CI](https://github.com/AlexeyVN/hotel-linen-management/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexeyVN/hotel-linen-management/actions/workflows/ci.yml)
