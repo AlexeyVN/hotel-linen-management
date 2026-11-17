@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { kopecksToInput, parseRublesToKopecks } from "@/lib/money";
-import { useMoney } from "@/components/currency-provider";
+import { useCurrency, useMoney } from "@/components/currency-provider";
+import { useTranslations } from "next-intl";
 import { trpc } from "@/lib/trpc-client";
 
 function errorText(error: unknown): string {
@@ -69,6 +70,9 @@ function XIcon() {
 }
 
 export function CatalogAdmin() {
+  const t = useTranslations("catalog");
+  const currency = useCurrency();
+  const currencySymbol = currency === "RUB" ? "₽" : currency === "EUR" ? "€" : "$";
   const money = useMoney();
   const utils = trpc.useUtils();
   const catalogQuery = trpc.catalog.list.useQuery();
@@ -120,7 +124,7 @@ export function CatalogAdmin() {
   async function create() {
     const price = parseRublesToKopecks(form.price);
     if (!form.name.trim() || !form.categoryId || price === null) {
-      setError("Укажите название, категорию и корректную цену");
+      setError(t("invalid"));
       return;
     }
     await run(async () => {
@@ -132,13 +136,13 @@ export function CatalogAdmin() {
         note: form.note || null,
       });
       setForm(EMPTY_FORM);
-    }, "Позиция добавлена в справочник");
+    }, t("added"));
   }
 
   async function saveEdit(id: string) {
     const price = parseRublesToKopecks(draft.price);
     if (!draft.name.trim() || !draft.categoryId || price === null) {
-      setError("Укажите название, категорию и корректную цену");
+      setError(t("invalid"));
       return;
     }
     await run(async () => {
@@ -151,16 +155,15 @@ export function CatalogAdmin() {
         note: draft.note || null,
       });
       setEditId(null);
-    }, "Позиция сохранена");
+    }, t("saved"));
   }
 
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold">Справочник позиций</h1>
+        <h1 className="text-2xl font-semibold">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">
-          Цена и примечание задаются здесь; количество на складе — read-only, вводится при
-          добавлении на склад.
+          {t("intro")}
         </p>
       </header>
 
@@ -173,24 +176,24 @@ export function CatalogAdmin() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Новая позиция</CardTitle>
+          <CardTitle>{t("newItem")}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap items-end gap-3">
           <label className="min-w-56 flex-1 text-sm">
-            <span className="mb-1 block text-muted-foreground">Название</span>
+            <span className="mb-1 block text-muted-foreground">{t("name")}</span>
             <Input
               value={form.name}
               onChange={(event) => setForm({ ...form, name: event.target.value })}
             />
           </label>
           <label className="text-sm">
-            <span className="mb-1 block text-muted-foreground">Категория</span>
+            <span className="mb-1 block text-muted-foreground">{t("category")}</span>
             <select
               value={form.categoryId}
               onChange={(event) => setForm({ ...form, categoryId: event.target.value })}
               className="h-10 rounded-md border bg-background px-3"
             >
-              <option value="">— выберите —</option>
+              <option value="">{t("choose")}</option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
@@ -199,14 +202,14 @@ export function CatalogAdmin() {
             </select>
           </label>
           <label className="w-24 text-sm">
-            <span className="mb-1 block text-muted-foreground">Ед.</span>
+            <span className="mb-1 block text-muted-foreground">{t("unit")}</span>
             <Input
               value={form.unit}
               onChange={(event) => setForm({ ...form, unit: event.target.value })}
             />
           </label>
           <label className="w-36 text-sm">
-            <span className="mb-1 block text-muted-foreground">Цена, ₽</span>
+            <span className="mb-1 block text-muted-foreground">{t("priceCurrency", { currency: currencySymbol })}</span>
             <Input
               inputMode="decimal"
               placeholder="0,00"
@@ -215,24 +218,24 @@ export function CatalogAdmin() {
             />
           </label>
           <label className="min-w-56 flex-1 text-sm">
-            <span className="mb-1 block text-muted-foreground">Примечание</span>
+            <span className="mb-1 block text-muted-foreground">{t("note")}</span>
             <Input
               value={form.note}
               onChange={(event) => setForm({ ...form, note: event.target.value })}
             />
           </label>
-          <Button onClick={create}>Добавить позицию</Button>
+          <Button onClick={create}>{t("addItem")}</Button>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Позиции</CardTitle>
+          <CardTitle>{t("items")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap gap-2">
             <Input
-              placeholder="Поиск по названию"
+              placeholder={t("searchPlaceholder")}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               className="w-full sm:max-w-xs"
@@ -242,7 +245,7 @@ export function CatalogAdmin() {
               onChange={(event) => setCategoryFilter(event.target.value)}
               className="h-10 rounded-md border bg-background px-3 text-sm"
             >
-              <option value="all">Все категории</option>
+              <option value="all">{t("allCategories")}</option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
@@ -254,30 +257,30 @@ export function CatalogAdmin() {
           <div className="overflow-x-auto [contain:paint]">
             <table className="w-full min-w-[560px] table-fixed text-[13px] md:min-w-[900px] xl:text-sm">
               <caption className="sr-only">
-                Справочник позиций: название, категория, цена, остаток и примечание
+                {t("tableCaption")}
               </caption>
               <thead>
                 <tr className="text-left text-muted-foreground">
                   <th scope="col" className="sticky left-0 z-10 w-[26%] whitespace-nowrap border-b bg-card px-2 py-2 text-xs font-medium md:w-[24%] xl:text-[13px]">
-                    Название
+                    {t("name")}
                   </th>
                   <th scope="col" className="hidden w-[12%] whitespace-nowrap border-b px-2 py-2 text-xs font-medium md:table-cell xl:text-[13px]">
-                    Категория
+                    {t("category")}
                   </th>
                   <th scope="col" className="hidden w-[6%] whitespace-nowrap border-b px-2 py-2 text-xs font-medium md:table-cell xl:text-[13px]">
-                    Ед.
+                    {t("unit")}
                   </th>
                   <th scope="col" className="w-[18%] whitespace-nowrap border-b px-2 py-2 text-right text-xs font-medium md:w-[13%] xl:text-[13px]">
-                    Цена
+                    {t("price")}
                   </th>
                   <th scope="col" className="w-[18%] whitespace-nowrap border-b px-2 py-2 text-right text-xs font-medium md:w-[13%] xl:text-[13px]">
-                    Остаток
+                    {t("stock")}
                   </th>
                   <th scope="col" className="hidden w-[20%] whitespace-nowrap border-b px-2 py-2 text-xs font-medium md:table-cell xl:text-[13px]">
-                    Примечание
+                    {t("note")}
                   </th>
                   <th scope="col" className="w-[20%] border-b px-2 py-2 md:w-[12%]">
-                    <span className="sr-only">Действия</span>
+                    <span className="sr-only">{t("actions")}</span>
                   </th>
                 </tr>
               </thead>
@@ -292,7 +295,7 @@ export function CatalogAdmin() {
                             value={draft.name}
                             onChange={(event) => setDraft({ ...draft, name: event.target.value })}
                             className="h-9"
-                            aria-label="Название позиции"
+                            aria-label={t("nameAria")}
                           />
                         ) : (
                           <span className={item.isActive ? "" : "text-muted-foreground line-through"}>
@@ -314,7 +317,7 @@ export function CatalogAdmin() {
                               setDraft({ ...draft, categoryId: event.target.value })
                             }
                             className="h-9 w-full rounded-md border bg-background px-2"
-                            aria-label="Категория"
+                            aria-label={t("categoryAria")}
                           >
                             {categories.map((category) => (
                               <option key={category.id} value={category.id}>
@@ -332,7 +335,7 @@ export function CatalogAdmin() {
                             value={draft.unit}
                             onChange={(event) => setDraft({ ...draft, unit: event.target.value })}
                             className="h-9 w-full"
-                            aria-label="Единица измерения"
+                            aria-label={t("unitAria")}
                           />
                         ) : (
                           item.unit
@@ -344,7 +347,7 @@ export function CatalogAdmin() {
                             value={draft.price}
                             onChange={(event) => setDraft({ ...draft, price: event.target.value })}
                             className="h-9 w-full text-right"
-                            aria-label="Цена, рубли"
+                            aria-label={t("priceAria")}
                           />
                         ) : (
                           money(item.priceKopecks)
@@ -359,7 +362,7 @@ export function CatalogAdmin() {
                             value={draft.note}
                             onChange={(event) => setDraft({ ...draft, note: event.target.value })}
                             className="h-9"
-                            aria-label="Примечание"
+                            aria-label={t("noteAria")}
                           />
                         ) : (
                           <span
@@ -378,8 +381,8 @@ export function CatalogAdmin() {
                                 size="sm"
                                 variant="outline"
                                 className="!h-8 !w-8 !p-0"
-                                aria-label={`Сохранить позицию «${item.name}»`}
-                                title="Сохранить"
+                                aria-label={t("saveAria", { name: item.name })}
+                                title={t("save")}
                                 onClick={() => saveEdit(item.id)}
                               >
                                 <CheckIcon />
@@ -388,8 +391,8 @@ export function CatalogAdmin() {
                                 size="sm"
                                 variant="outline"
                                 className="!h-8 !w-8 !p-0"
-                                aria-label={`Отменить редактирование «${item.name}»`}
-                                title="Отмена"
+                                aria-label={t("cancelAria", { name: item.name })}
+                                title={t("cancel")}
                                 onClick={() => setEditId(null)}
                               >
                                 <XIcon />
@@ -401,8 +404,8 @@ export function CatalogAdmin() {
                                 size="sm"
                                 variant="outline"
                                 className="!h-8 !w-8 !p-0"
-                                aria-label={`Изменить позицию «${item.name}»`}
-                                title="Изменить"
+                                aria-label={t("editAria", { name: item.name })}
+                                title={t("edit")}
                                 onClick={() => startEdit(item)}
                               >
                                 <PencilIcon />
@@ -413,10 +416,10 @@ export function CatalogAdmin() {
                                 className="!h-8 !w-8 !p-0"
                                 aria-label={
                                   item.isActive
-                                    ? `Выключить позицию «${item.name}»`
-                                    : `Включить позицию «${item.name}»`
+                                    ? t("disableAria", { name: item.name })
+                                    : t("enableAria", { name: item.name })
                                 }
-                                title={item.isActive ? "Выключить" : "Включить"}
+                                title={item.isActive ? t("disable") : t("enable")}
                                 onClick={() =>
                                   run(
                                     () =>
@@ -424,7 +427,7 @@ export function CatalogAdmin() {
                                         id: item.id,
                                         isActive: !item.isActive,
                                       }),
-                                    item.isActive ? "Позиция деактивирована" : "Позиция активирована",
+                                    item.isActive ? t("deactivated") : t("activated"),
                                   )
                                 }
                               >
@@ -434,13 +437,13 @@ export function CatalogAdmin() {
                                 size="sm"
                                 variant="outline"
                                 className="!h-8 !w-8 !p-0"
-                                aria-label={`Удалить позицию «${item.name}»`}
-                                title="Удалить"
+                                aria-label={t("deleteAria", { name: item.name })}
+                                title={t("delete")}
                                 onClick={() => {
-                                  if (!window.confirm(`Удалить позицию «${item.name}»?`)) return;
+                                  if (!window.confirm(t("deleteConfirm", { name: item.name }))) return;
                                   void run(
                                     () => deleteItem.mutateAsync({ id: item.id }),
-                                    "Позиция удалена",
+                                    t("deleted"),
                                   );
                                 }}
                               >
@@ -457,7 +460,7 @@ export function CatalogAdmin() {
             </table>
           </div>
           {visible.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Позиций нет.</p>
+            <p className="text-sm text-muted-foreground">{t("empty")}</p>
           ) : null}
         </CardContent>
       </Card>

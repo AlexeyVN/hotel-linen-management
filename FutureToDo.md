@@ -1,11 +1,11 @@
 # FutureToDo — многоязычность и валюта
 
 Обновлено: 2026-11-17.
-Статус: **v2.3.1 — базовая i18n и единая валюта реализованы; полная локализация остальных экранов/мобильного/Excel продолжается**.
+Статус: **v2.3.2 — базовая i18n и единая валюта реализованы; полная локализация остальных экранов/мобильного/Excel продолжается**.
 
 ## Текущее состояние проекта
 
-- Версия: `2.3.1`.
+- Версия: `2.3.2`.
 - Репозиторий: <https://github.com/AlexeyVN/hotel-linen-management> (public, `main`).
 - Стек: Next.js 15 App Router, React 19, TypeScript strict, tRPC v11, Prisma 6 + SQLite, next-auth v4, Tailwind, PWA.
 - База: 12 миграций, SQLite.
@@ -14,7 +14,7 @@
 - Бренд/название отеля: динамические из `branding.hotelName`.
 - В меню «Настройки» порядок: Общие настройки → Номера и типы комнат → Пользователи → Роли → Интеграция 1С.
 - Установка: `install.cmd` + `deploy/install.ps1`; инструкция `docs/INSTALL-OPEN-SERVER.md`.
-- Дистрибутив до i18n: `_releases/hotel-linen-management-v2.2.0-pre-i18n.zip`; текущий `_releases/hotel-linen-management-v2.3.1-open-server.zip`.
+- Дистрибутив до i18n: `_releases/hotel-linen-management-v2.2.0-pre-i18n.zip`; текущий `_releases/hotel-linen-management-v2.3.2-open-server.zip`.
 - i18n: `next-intl`, 5 JSON-файлов, cookie `NEXT_LOCALE`, глобальный выбор в Настройках.
 - Переведены: вход, оболочка, меню, настройки (включая брендинг), дашборд, основные подписи номеров.
 - Осталось: склад/документы/отчёты/уборка/горничные/чекисты/QR/пользователи/роли, мобильный кабинет, полный Excel.

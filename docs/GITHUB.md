@@ -9,7 +9,7 @@
 **Название:** `hotel-linen-management`
 **Бренд:** «Белая пристань» / White Harbor
 **Репозиторий:** <https://github.com/AlexeyVN/hotel-linen-management> (public, ветка `main`)
-**Версия:** `v2.3.1` (M1–M14 + 1С-статусы + гибкие номера + i18n/валюта, ТЗ v3.2)
+**Версия:** `v2.3.2` (M1–M14 + 1С-статусы + гибкие номера + i18n/валюта, ТЗ v3.2)
 **Лицензия:** Apache License 2.0 (`LICENSE`, `NOTICE`)
 **Автор идеи:** Vlasevskii Aleksei Nikolaevich
 **Разработчик:** DeepSeek Harness (AI-разработчик)
@@ -164,7 +164,7 @@ gh repo create <OWNER>/<REPO> --private --source=. --remote=origin --push
 3. **Code security** — Dependabot alerts, secret scanning, push protection; конфиг обновлений — `.github/dependabot.yml` (npm + actions).
 4. **Branches** — защитить `main`: PR + прохождение CI.
 5. **Environments** — не требуются: CI использует фиктивные переменные.
-6. **Releases** — после стабилизации тег `v2.3.1`.
+6. **Releases** — после стабилизации тег `v2.3.2`.
 
 Бейдж CI (замените `<OWNER>/<REPO>`):
 
@@ -226,5 +226,5 @@ Apache 2.0 выбран за патентную оговорку и совмес
 - [x] бренд «Белая пристань»: `brand/`, PWA-иконки, название в приложении
 - [ ] в GitHub указаны автор идеи (Vlasevskii Aleksei Nikolaevich) и разработчик (DeepSeek Harness)
 - [ ] CI badge заменён на реальный URL
-- [ ] тег `v2.3.1` и GitHub Release
+- [ ] тег `v2.3.2` и GitHub Release
 - [ ] проверено развёртывание по [DEPLOYMENT.md](DEPLOYMENT.md)

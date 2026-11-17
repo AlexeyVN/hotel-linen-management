@@ -1,13 +1,14 @@
+import { getTranslations } from "next-intl/server";
 import { OperationForm } from "@/components/operation-form";
 
-export default function WriteOffPage() {
+export default async function OperationPage() {
+  const t = await getTranslations("operations");
   return (
     <div className="space-y-4">
       <header>
-        <h1 className="text-2xl font-semibold">Списание</h1>
+        <h1 className="text-2xl font-semibold">{t("writeoffTitle")}</h1>
         <p className="text-sm text-muted-foreground">
-          Причина обязательна: пункт из справочника или свободный текст. Списание
-          необратимо, исправление — только новой операцией.
+          {t("writeoffIntro")}
         </p>
       </header>
       <OperationForm mode="WRITE_OFF" />

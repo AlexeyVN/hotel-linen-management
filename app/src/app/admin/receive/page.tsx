@@ -1,12 +1,14 @@
+import { getTranslations } from "next-intl/server";
 import { OperationForm } from "@/components/operation-form";
 
-export default function ReceivePage() {
+export default async function OperationPage() {
+  const t = await getTranslations("operations");
   return (
     <div className="space-y-4">
       <header>
-        <h1 className="text-2xl font-semibold">Приёмка на склад</h1>
+        <h1 className="text-2xl font-semibold">{t("receiveTitle")}</h1>
         <p className="text-sm text-muted-foreground">
-          Поступление позиций увеличивает остаток склада одной транзакцией.
+          {t("receiveIntro")}
         </p>
       </header>
       <OperationForm mode="RECEIVE" />

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShowDatesToggle } from "@/components/show-dates-toggle";
 import { WarehouseAddForm } from "@/components/warehouse-add";
@@ -15,6 +16,7 @@ export default async function WarehousePage({
 }) {
   const params = await searchParams;
   const { locale, currency } = await getUiSettings();
+  const t = await getTranslations({ locale, namespace: "warehouse" });
   const money = (value: number) => formatMoney(value, locale, currency);
   const categoryId = params.category && params.category !== "all" ? params.category : undefined;
 
@@ -36,21 +38,21 @@ export default async function WarehousePage({
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold">Склад</h1>
+        <h1 className="text-2xl font-semibold">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">
-          Остатки по позициям, цена из справочника и дата последнего поступления.
+          {t("intro")}
         </p>
       </header>
 
       <form method="get" className="flex flex-wrap items-end gap-3">
         <label className="text-sm">
-          <span className="mb-1 block text-muted-foreground">Категория</span>
+          <span className="mb-1 block text-muted-foreground">{t("category")}</span>
           <select
             name="category"
             defaultValue={categoryId ?? "all"}
             className="h-10 rounded-md border bg-background px-3 text-sm"
           >
-            <option value="all">Все</option>
+            <option value="all">{t("all")}</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.name}
@@ -62,28 +64,28 @@ export default async function WarehousePage({
           type="submit"
           className="h-10 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
         >
-          Показать
+          {t("show")}
         </button>
         <Link href="/admin/warehouse" className="text-sm text-muted-foreground underline">
-          Сбросить
+          {t("reset")}
         </Link>
         <div className="ml-auto flex flex-wrap items-center gap-4 text-sm">
           <ShowDatesToggle initial={showDates} />
           <span className="text-muted-foreground">
             <Link href="/admin/catalog" className="underline">
-              Справочник
+              {t("catalog")}
             </Link>
             {" · "}
             <Link href="/admin/receive" className="underline">
-              Принять
+              {t("receive")}
             </Link>
             {" · "}
             <Link href="/admin/distribute" className="underline">
-              Раздать
+              {t("distribute")}
             </Link>
             {" · "}
             <Link href="/admin/writeoff" className="underline">
-              Списать
+              {t("writeoff")}
             </Link>
           </span>
         </div>
@@ -93,21 +95,21 @@ export default async function WarehousePage({
 
       <Card>
         <CardHeader>
-          <CardTitle>Остатки · стоимость {money(totalValue)}</CardTitle>
+          <CardTitle>{t("stockValue", { value: money(totalValue) })}</CardTitle>
         </CardHeader>
         <CardContent>
           {items.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Позиций нет.</p>
+            <p className="text-sm text-muted-foreground">{t("empty")}</p>
           ) : (
             <DataTable minWidth="820px">
               <thead>
                 <tr className="border-b text-left text-muted-foreground">
-                  <th className="py-2 font-medium">Позиция</th>
-                  <th className="py-2 font-medium">Категория</th>
-                  <th className="py-2 text-right font-medium">Остаток</th>
-                  <th className="py-2 text-right font-medium">Цена</th>
-                  <th className="py-2 text-right font-medium">Стоимость</th>
-                  {showDates ? <th className="whitespace-nowrap py-2 pl-4 font-medium">Поступление</th> : null}
+                  <th className="py-2 font-medium">{t("item")}</th>
+                  <th className="py-2 font-medium">{t("category")}</th>
+                  <th className="py-2 text-right font-medium">{t("stock")}</th>
+                  <th className="py-2 text-right font-medium">{t("price")}</th>
+                  <th className="py-2 text-right font-medium">{t("value")}</th>
+                  {showDates ? <th className="whitespace-nowrap py-2 pl-4 font-medium">{t("receipt")}</th> : null}
                 </tr>
               </thead>
               <tbody>
@@ -136,7 +138,7 @@ export default async function WarehousePage({
                       {showDates ? (
                         <td className="whitespace-nowrap py-2 pl-4 text-muted-foreground">
                           {item.warehouse?.lastReceiptAt
-                            ? new Intl.DateTimeFormat("ru-RU").format(
+                            ? new Intl.DateTimeFormat(locale).format(
                                 item.warehouse.lastReceiptAt,
                               )
                             : "—"}

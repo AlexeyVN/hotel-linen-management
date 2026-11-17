@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMoney } from "@/components/currency-provider";
+import { useTranslations } from "next-intl";
 import { trpc } from "@/lib/trpc-client";
 
 function newOpId(): string {
@@ -27,6 +28,7 @@ function errorText(error: unknown): string {
 }
 
 export function WarehouseAddForm({ initialItemId }: { initialItemId?: string }) {
+  const t = useTranslations("warehouseAdd");
   const money = useMoney();
   const router = useRouter();
   const utils = trpc.useUtils();
@@ -53,11 +55,11 @@ export function WarehouseAddForm({ initialItemId }: { initialItemId?: string }) 
     setError(null);
     setNotice(null);
     if (!itemId) {
-      setError("Выберите позицию из справочника");
+      setError(t("errorItem"));
       return;
     }
     if (!Number.isInteger(parsedQty) || parsedQty <= 0) {
-      setError("Количество должно быть целым и больше нуля");
+      setError(t("errorQty"));
       return;
     }
     setPending(true);
@@ -68,7 +70,7 @@ export function WarehouseAddForm({ initialItemId }: { initialItemId?: string }) 
         comment: comment || undefined,
         clientOpId: newOpId(),
       });
-      setNotice("Позиция добавлена на склад");
+      setNotice(t("added"));
       setQty("");
       setComment("");
       await Promise.all([
@@ -86,16 +88,16 @@ export function WarehouseAddForm({ initialItemId }: { initialItemId?: string }) 
 
   return (
     <div className="space-y-3 rounded-lg border bg-card p-4">
-      <p className="text-sm font-medium">Добавить на склад из справочника</p>
+      <p className="text-sm font-medium">{t("title")}</p>
       <div className="flex flex-wrap items-end gap-3">
         <label className="min-w-56 flex-1 text-sm">
-          <span className="mb-1 block text-muted-foreground">Позиция</span>
+          <span className="mb-1 block text-muted-foreground">{t("item")}</span>
           <select
             value={itemId}
             onChange={(event) => setItemId(event.target.value)}
             className="h-10 w-full rounded-md border bg-background px-3"
           >
-            <option value="">— выберите —</option>
+            <option value="">{t("choose")}</option>
             {items.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.name} ({item.unit}) · {money(item.priceKopecks)}
@@ -104,7 +106,7 @@ export function WarehouseAddForm({ initialItemId }: { initialItemId?: string }) 
           </select>
         </label>
         <label className="w-28 text-sm">
-          <span className="mb-1 block text-muted-foreground">Количество</span>
+          <span className="mb-1 block text-muted-foreground">{t("qty")}</span>
           <Input
             type="number"
             min={1}
@@ -114,11 +116,11 @@ export function WarehouseAddForm({ initialItemId }: { initialItemId?: string }) 
           />
         </label>
         <label className="text-sm">
-          <span className="mb-1 block text-muted-foreground">Дата поступления</span>
+          <span className="mb-1 block text-muted-foreground">{t("date")}</span>
           <Input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
         </label>
         <label className="min-w-48 flex-1 text-sm">
-          <span className="mb-1 block text-muted-foreground">Примечание</span>
+          <span className="mb-1 block text-muted-foreground">{t("note")}</span>
           <Input
             value={comment}
             maxLength={500}
@@ -126,13 +128,12 @@ export function WarehouseAddForm({ initialItemId }: { initialItemId?: string }) 
           />
         </label>
         <Button onClick={submit} disabled={pending}>
-          {pending ? "Добавляем…" : "Добавить"}
+          {pending ? t("adding") : t("add")}
         </Button>
       </div>
       {selected ? (
         <p className="text-xs text-muted-foreground">
-          Цена из справочника: {money(selected.priceKopecks)} · сумма:{" "}
-          {money(total)}
+          {t("price", { price: money(selected.priceKopecks), sum: money(total) })}
         </p>
       ) : null}
       {error ? (
