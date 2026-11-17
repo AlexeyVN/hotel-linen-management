@@ -209,6 +209,7 @@ docs/                       ТЗ, планы, скриншоты, DEPLOYMENT/OPE
 - Настройки и права: [docs/CONFIGURATION.md](docs/CONFIGURATION.md)
 - История изменений: [CHANGELOG.md](CHANGELOG.md), безопасность: [SECURITY.md](SECURITY.md)
 - Планы этапов: [справочник/цена](docs/plan-catalog-rooms-2026-11-05.md), [горничные](docs/plan-maids-2026-11-05.md), [адаптивные таблицы](docs/plan-catalog-table-2026-11-05.md), [QR-маршруты и хранение](docs/plan-qr-routes-persist-2026-11-05.md), [сброс QR в UI](docs/plan-qr-ui-reset-2026-11-05.md), [логотип и Excel](docs/plan-branding-excel-2026-11-05.md), [навигация и пользователи](docs/plan-ui-nav-users-2026-11-05.md), [перестройка страницы пользователей](docs/plan-users-ui-2026-11-05.md), [русские подписи прав](docs/plan-roles-labels-2026-11-05.md), [статусы номеров 1С](docs/plan-1c-room-status-2026-11-05.md), [гибкие номера](docs/plan-rooms-custom-fields-2026-11-17.md)
+- Будущие решения: [FutureToDo](FutureToDo.md) — многоязычность, валюта, открытые вопросы
 - Бренд: [brand/README.md](brand/README.md), [логотип](brand/logo-lockup.png)
 - Анализ рынка: [docs/analysis-housekeeping-market-2026-11-05.md](docs/analysis-housekeeping-market-2026-11-05.md)
 - Публикация на GitHub: [docs/GITHUB.md](docs/GITHUB.md)
