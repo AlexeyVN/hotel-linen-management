@@ -1,0 +1,72 @@
+{
+  "name": "hotel-linen-management",
+  "version": "2.2.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "author": "Vlasevskii Aleksei Nikolaevich",
+  "contributors": [
+    "DeepSeek Harness"
+  ],
+  "description": "Учёт белья и инвентаря отеля «Белая пристань»: склад, инвентаризация, QR, Excel, 1С, PWA горничной, чек-листы и аналитика уборки",
+  "engines": {
+    "node": ">=24"
+  },
+  "keywords": [
+    "hotel",
+    "housekeeping",
+    "linen",
+    "inventory",
+    "nextjs",
+    "prisma",
+    "trpc",
+    "pwa"
+  ],
+  "scripts": {
+    "dev": "next dev -H 0.0.0.0 -p 3000",
+    "build": "next build",
+    "start": "next start -H 0.0.0.0 -p 3000",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "db:reset": "prisma migrate reset --force"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.1.0",
+    "@tanstack/react-query": "^5.62.0",
+    "@trpc/client": "^11.0.0",
+    "@trpc/react-query": "^11.0.0",
+    "@trpc/server": "^11.0.0",
+    "bcryptjs": "^2.4.3",
+    "date-fns": "^4.1.0",
+    "exceljs": "^4.4.0",
+    "jsqr": "^1.4.0",
+    "next": "^15.1.0",
+    "next-auth": "^4.24.15",
+    "pino": "^9.5.0",
+    "qrcode": "^1.5.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "superjson": "^2.2.2",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.10.0",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.20",
+    "pino-pretty": "^13.0.0",
+    "playwright": "^1.64.1",
+    "postcss": "^8.4.49",
+    "prisma": "^6.1.0",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

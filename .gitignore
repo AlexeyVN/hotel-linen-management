@@ -1,0 +1,41 @@
+# OS / editors
+.DS_Store
+Thumbs.db
+*.log
+
+# Secrets — никогда не коммитить
+.env
+.env.*
+!.env.example
+!**/.env.example
+*.pem
+*.key
+*.pfx
+*.db
+*.sqlite
+*.sqlite3
+
+# Node / Next
+**/node_modules/
+**/.next/
+**/out/
+**/build/
+**/.npm-cache/
+**/.playwright-browsers/
+**/next-env.d.ts
+**/*.tsbuildinfo
+
+# Runtime data (SQLite, фото, логи, бэкапы)
+app/data/*.db
+app/data/*.db-journal
+app/data/*.db-wal
+app/data/*.db-shm
+app/storage/
+app/logs/
+app/backups/
+app/screenshots/
+app/.tmp/
+
+# Локальные инструменты
+.omd/
+.dsh-backup/

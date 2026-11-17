@@ -1,0 +1,449 @@
+// Prisma-схема по ТЗ v2.3, §5.
+// Важно: enums здесь не используются намеренно — SQLite не проверяет значения
+// на уровне БД, поэтому тип операции/статус — String + Zod-валидация (§5.2.5).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  login        String    @unique
+  passwordHash String
+  fullName     String
+  roleId       String
+  role         Role      @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  failedLogins Int       @default(0)
+  lockedUntil  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  rooms         UserRoom[]
+  operations    Operation[]
+  auditSessions AuditSession[]
+  cleaningTasks CleaningTask[] @relation("TaskAssignee")
+  createdCleaningTasks CleaningTask[] @relation("TaskCreator")
+  shifts        Shift[]
+  checklistAnswers ChecklistAnswer[]
+
+  @@index([roleId])
+}
+
+model Role {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  isSystem  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  permissions RolePermission[]
+  users       User[]
+}
+
+model Permission {
+  id          String @id @default(cuid())
+  code        String @unique
+  description String
+
+  roles RolePermission[]
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+}
+
+model UserRoom {
+  userId String
+  roomId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  room   Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roomId])
+  @@index([roomId])
+}
+
+model RoomType {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  rooms     Room[]
+  minStocks MinStock[]
+}
+
+model Room {
+  id         String   @id @default(cuid())
+  number     String   @unique
+  /** Числовой этаж; null, если задан floorName. */
+  floor      Int?
+  /** Свободное название этажа; null, если задан floor. */
+  floorName  String?
+  roomTypeId String
+  isActive   Boolean  @default(true)
+  /** CLEAN | DIRTY | INSPECTED | OUT_OF_ORDER (ТЗ v2.4, хаускипинг) */
+  cleaningStatus String @default("CLEAN")
+  /** Время последнего изменения статуса; защита от устаревших webhook-событий. */
+  cleaningStatusUpdatedAt DateTime @default(now())
+  /** LOCAL | ONEC — источник последнего изменения. */
+  cleaningStatusSource String @default("LOCAL")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  roomType      RoomType         @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
+  inventories   RoomInventory[]
+  operations    Operation[]
+  userRooms     UserRoom[]
+  auditSessions AuditSession[]
+  cleaningTasks CleaningTask[]
+  qrCode        QrCode?
+  roomStatusEvents RoomStatusEvent[]
+
+  @@index([floor])
+  @@index([roomTypeId])
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  createdAt DateTime @default(now())
+
+  items Item[]
+}
+
+model Item {
+  id         String   @id @default(cuid())
+  name       String
+  categoryId String
+  unit       String   @default("шт")
+  /** Цена за единицу в копейках (деньги не во float, ТЗ v2.6) */
+  priceKopecks Int    @default(0)
+  note       String?
+  externalId String?  @unique
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  category        Category            @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  warehouse       WarehouseInventory?
+  roomInventories RoomInventory[]
+  operationItems  OperationItem[]
+  minStocks       MinStock[]
+  auditLines      AuditLine[]
+  qrCode          QrCode?
+
+  @@index([categoryId])
+  @@index([externalId])
+}
+
+model WarehouseInventory {
+  id        String   @id @default(cuid())
+  itemId    String   @unique
+  qty       Int      @default(0)
+  /** Дата последнего поступления (ТЗ v2.6) */
+  lastReceiptAt DateTime?
+  version   Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+}
+
+model RoomInventory {
+  id        String   @id @default(cuid())
+  roomId    String
+  itemId    String
+  qty       Int      @default(0)
+  version   Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, itemId])
+  @@index([roomId])
+}
+
+// Операция неизменяема: ошибочное проведение исправляется обратной операцией.
+model Operation {
+  id         String   @id @default(cuid())
+  type       String
+  roomId     String?
+  userId     String
+  clientOpId String?  @unique
+  comment    String?
+  reason     String?
+  /** Дата документа: приёмка — дата поступления, остальные — дата проведения (ТЗ v2.6) */
+  documentDate DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  user   User            @relation(fields: [userId], references: [id], onDelete: Restrict)
+  room   Room?           @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  items  OperationItem[]
+  outbox OutboxEntry?
+
+  @@index([createdAt])
+  @@index([type])
+  @@index([roomId])
+}
+
+model OperationItem {
+  id          String @id @default(cuid())
+  operationId String
+  itemId      String
+  qty         Int
+  expectedQty Int?
+  factQty     Int?
+  delta       Int?
+
+  operation Operation @relation(fields: [operationId], references: [id], onDelete: Cascade)
+  item      Item      @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@index([itemId])
+}
+
+model AuditSession {
+  id          String    @id @default(cuid())
+  roomId      String
+  userId      String
+  status      String    @default("DRAFT")
+  startedAt   DateTime  @default(now())
+  appliedAt   DateTime?
+  operationId String?   @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  room   Room    @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  user   User    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  photos Photo[]
+  lines  AuditLine[]
+
+  @@index([roomId])
+}
+
+// Строки инвентаризации: учётное и фактическое количество по позиции (ТЗ §7.6).
+model AuditLine {
+  id             String @id @default(cuid())
+  auditSessionId String
+  itemId         String
+  expectedQty    Int
+  factQty        Int
+
+  auditSession AuditSession @relation(fields: [auditSessionId], references: [id], onDelete: Cascade)
+  item         Item         @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@unique([auditSessionId, itemId])
+  @@index([itemId])
+}
+
+model Photo {
+  id             String   @id @default(cuid())
+  auditSessionId String
+  fileName       String
+  mimeType       String
+  sizeBytes      Int
+  createdAt      DateTime @default(now())
+
+  auditSession AuditSession @relation(fields: [auditSessionId], references: [id], onDelete: Cascade)
+
+  @@index([auditSessionId])
+}
+
+model MinStock {
+  id         String @id @default(cuid())
+  itemId     String
+  roomTypeId String
+  minQty     Int    @default(0)
+
+  item     Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  roomType RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, roomTypeId])
+}
+
+model OutboxEntry {
+  id            String    @id @default(cuid())
+  operationId   String    @unique
+  status        String    @default("PENDING")
+  attempts      Int       @default(0)
+  lastError     String?
+  externalRef   String?
+  nextAttemptAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  operation Operation @relation(fields: [operationId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextAttemptAt])
+}
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model RoomStatusEvent {
+  id            String    @id @default(cuid())
+  roomId        String
+  /** INBOUND (1С → система) | OUTBOUND (система → 1С) */
+  direction     String
+  eventId       String    @unique
+  status        String
+  /** ONEC | LOCAL */
+  source        String
+  /** APPLIED | IGNORED | PENDING | SENT | FAILED | SUPERSEDED */
+  state         String    @default("PENDING")
+  attempts      Int       @default(0)
+  lastError     String?
+  externalRef   String?
+  occurredAt    DateTime
+  nextAttemptAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([direction, state, nextAttemptAt])
+  @@index([roomId, createdAt])
+}
+
+// Хаускипинг: задачи на уборку и смены (ТЗ v2.4). Чек-листы — вне объёма этого этапа.
+model CleaningTask {
+  id             String    @id @default(cuid())
+  roomId         String
+  /** DAILY | ON_DEMAND | GENERAL — справочник в коде, значения валидируются Zod */
+  type           String
+  /** URGENT | MEDIUM | LOW */
+  priority       String    @default("MEDIUM")
+  /** NEW | IN_PROGRESS | DONE | CANCELLED */
+  status         String    @default("NEW")
+  assigneeId     String?
+  createdById    String
+  plannedMinutes Int?
+  comment        String?
+  checklistTemplateId String?
+  startedAt      DateTime?
+  finishedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  room      Room @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  assignee  User? @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  createdBy User  @relation("TaskCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  checklistTemplate ChecklistTemplate? @relation(fields: [checklistTemplateId], references: [id], onDelete: SetNull)
+  answers   ChecklistAnswer[]
+
+  @@index([assigneeId, status])
+  @@index([roomId])
+  @@index([createdAt])
+}
+
+// Чек-листы уборки (ТЗ v2.5): шаблон → пункты; ответы привязаны к задаче.
+model ChecklistTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items ChecklistItem[]
+  tasks CleaningTask[]
+}
+
+model ChecklistItem {
+  id              String  @id @default(cuid())
+  templateId      String
+  text            String
+  sortOrder       Int     @default(0)
+  photoRequired   Boolean @default(false)
+  extraOptionText String?
+
+  template ChecklistTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  answers  ChecklistAnswer[]
+
+  @@index([templateId, sortOrder])
+}
+
+model ChecklistAnswer {
+  id             String    @id @default(cuid())
+  taskId         String
+  itemId         String
+  /** YES | NO | EXTRA */
+  answer         String
+  comment        String?
+  photoFileName  String?
+  photoMimeType  String?
+  photoSizeBytes Int?
+  answeredById   String
+  answeredAt     DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  task       CleaningTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  item       ChecklistItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  answeredBy User          @relation(fields: [answeredById], references: [id], onDelete: Restrict)
+
+  @@unique([taskId, itemId])
+  @@index([taskId])
+}
+
+model Shift {
+  id        String    @id @default(cuid())
+  userId    String
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, endedAt])
+}
+
+// QR-метка: одна активная на номер/позицию; файл — в storage/qr (вне public).
+model QrCode {
+  id            String   @id @default(cuid())
+  objectType    String
+  roomId        String?  @unique
+  itemId        String?  @unique
+  code          String
+  payload       String
+  payloadFormat String
+  imageFormat   String
+  fileName      String?
+  mimeType      String?
+  sizeBytes     Int?
+  baseUrl       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  room Room? @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  item Item? @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([objectType, code])
+}
+
+// Справочник причин списания (ТЗ v2.3 §5.1): выбор из списка или свободный текст.
+model WriteOffReason {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

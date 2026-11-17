@@ -1,0 +1,54 @@
+name: Bug report
+description: Сообщить об ошибке
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Не прикладывайте `.env`, пароли, дампы БД и персональные данные.
+  - type: textarea
+    id: steps
+    attributes:
+      label: Шаги воспроизведения
+      placeholder: "1. Открыть...\n2. Нажать...\n3. ..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Ожидаемое поведение
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Фактическое поведение
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Версия / коммит
+      placeholder: "v2.2.0"
+  - type: dropdown
+    id: area
+    attributes:
+      label: Раздел
+      options:
+        - Склад/документы
+        - Инвентаризация
+        - QR
+        - Номера/типы комнат
+        - Уборка/чек-листы
+        - Отчёты/Excel
+        - Пользователи/роли
+        - Настройки/логотип/цвет
+        - 1С: номенклатура/статусы
+        - Деплой/PWA
+        - Другое
+  - type: textarea
+    id: logs
+    attributes:
+      label: Логи (без секретов)
+      render: shell
