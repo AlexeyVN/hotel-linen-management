@@ -16,6 +16,25 @@
 **About:**
 > Учёт белья и инвентаря отеля «Белая пристань»: склад, инвентаризация с фото, QR, Excel, 1С (номенклатура и статусы номеров), гибкие номера и типы, PWA горничной, чек-листы, навигация и брендинг.
 
+**About — офлайн-профиль (RU):**
+> Локальная сборка для отеля на 10 номеров: работает без интернета, без ИИ и облака; Windows 11 Pro, 4 ядра/8 ГБ/SSD, Wi-Fi 5/6 AP, SQLite, резервное копирование.
+
+**About — offline (EN):**
+> On-prem hotel build for 10 rooms: runs without internet, AI or cloud; Windows 11 Pro, 4 cores/8 GB/SSD, Wi-Fi 5/6 AP, SQLite, local backups.
+
+**About — sin conexión (ES):**
+> Instalación local para hotel de 10 habitaciones: funciona sin internet, IA ni nube; Windows 11 Pro, 4 núcleos/8 GB/SSD, AP Wi-Fi 5/6, SQLite y copias locales.
+
+**About — offline (IT):**
+> Installazione locale per hotel da 10 camere: funziona senza internet, IA o cloud; Windows 11 Pro, 4 core/8 GB/SSD, AP Wi-Fi 5/6, SQLite e backup locali.
+
+**About — Offline (DE):**
+> Lokale Hotel-Installation für 10 Zimmer: läuft ohne Internet, KI oder Cloud; Windows 11 Pro, 4 Kerne/8 GB/SSD, Wi-Fi-5/6-AP, SQLite und lokale Backups.
+
+> GitHub About задаётся отдельно от README. Если `gh` авторизован:
+> `gh repo edit AlexeyVN/hotel-linen-management --description "..."`  
+> Без авторизации `gh` обновляется только README (он уже содержит офлайн-разделы на 5 языках).
+
 **Topics:** `hotel`, `housekeeping`, `linen`, `inventory`, `nextjs`, `typescript`, `prisma`, `sqlite`, `trpc`, `pwa`, `playwright`, `exceljs`, `apache-2.0`.
 
 **Стек:** Next.js 15 App Router, React 19, TypeScript strict, Tailwind, tRPC v11, Prisma 6 + SQLite, next-auth v4, PWA, ExcelJS, Playwright.
