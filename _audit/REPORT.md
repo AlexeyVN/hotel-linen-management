@@ -24,7 +24,7 @@ Runtime audit: **145 page captures** (20 admin routes + 9 mobile routes, each in
 |---|---|
 | `html lang` matches selected locale | **145 / 145** |
 | Page crashes | 0 |
-| Console errors | 1 unique issue: `MISSING_MESSAGE: qrPrint.print` in all 5 locales |
+| Console errors | 1 unique issue at v2.3.3: `MISSING_MESSAGE: qrPrint.print` in all 5 locales; fixed and verified in v2.3.4 |
 | Locale reset while navigating | **not reproduced** |
 | Mobile translated content | **0 / 9 routes** |
 | Admin fully translated | **12 / 20 routes** |
@@ -116,5 +116,5 @@ Module split recommended: auth/users, catalog/warehouse, operations, audit, clea
 ## 9. Known limitations
 
 - Runtime audit used the demo installation with currency RUB; currency formatting is separately covered by tests.
-- Audit reports baseline v2.3.3; `qrPrint.print` was added in the working tree after that baseline and needs a rebuild/deploy.
+- Audit reports baseline v2.3.3; `qrPrint.print` was added in v2.3.4, the bundle was rebuilt/deployed, and a post-fix production check returned `ERRORS=[]`.
 - Mobile was intentionally not modified by this audit; the report is a fix plan, not an implementation.
