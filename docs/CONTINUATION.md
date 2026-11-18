@@ -1,7 +1,7 @@
 # Передача проекта — hotel-linen-management
 
 Дата: 2026-11-18  
-Релиз: **v2.3.6** (тег `v2.3.6`, релизный коммит `51ea0a2`; handoff — `844d9c0`)  
+Релиз: **v2.3.6** (тег `v2.3.6`, релизный коммит `51ea0a2`; handoff-документация — `0fffb92`)  
 Ветка: `main`  
 Production: `https://hotel` — HTTP 200  
 Текущая установка: **ru / RUB**  
@@ -166,7 +166,7 @@ sqlite3 C:\OSPanel\home\hotel\app\data\app.db "SELECT key,value FROM Setting WHE
 - Последний релизный коммит: `51ea0a2`
 - CI: зелёный (GitHub Actions workflow `.github/workflows/ci.yml`)
 - Архив: `_releases/hotel-linen-management-v2.3.6-open-server.zip`
-- Снапшот: `_checkpoints/hotel-linen-management-20261118-070947` (1060 файлов; restore 1060/1060 проверен)
+- Снапшот: `_checkpoints/hotel-linen-management-20261118-071336` (1075 файлов; integrity_check=ok)
 - Предыдущий pre-i18n архив: `_releases/hotel-linen-management-v2.2.0-pre-i18n.zip`
 
 ## 8. Правила продолжения
