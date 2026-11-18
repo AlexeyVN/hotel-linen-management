@@ -16,6 +16,29 @@
 
 Реализация по ТЗ [v3.2](docs/hotel-linen-TZ-v3.2.md). Стек: Next.js 15 (App Router), TypeScript strict, React 19, Tailwind, tRPC v11, Prisma 6 + SQLite, next-auth v4, PWA (manifest + service worker), Playwright. M1 — фундамент и права, M2 — склад и операции, M3 — инвентаризация и фото, M4 — PWA и офлайн-очередь, M5 — коннектор 1С/отчёты/эксплуатация; этап 2 — QR и Excel; M6 — хаускипинг; M7 — чек-листы и мобильный интерфейс; M8 — справочник, цена, дата, оценка; M9 — «Горничные»; M10 — адаптивный справочник; M11 — общий компонент таблиц; M12 — QR-маршруты и хранение меток; M13 — логотип и печатные формы Excel; M14 — навигация, цвет темы, редактирование пользователей; post-M14 — статусы 1С, гибкие номера и меню.
 
+## Офлайн-работа отеля / Offline hotel / Hotel sin conexión / Hotel offline / Hotel offline
+
+**Готовое приложение работает без интернета, без нейросетей и внешних AI-сервисов, на локальном компьютере отеля.** Все данные — локальная SQLite; 1С опциональна и работает только по локальной сети. Облако, телеметрия и внешние API не используются. Подробные требования и схема — [docs/OFFLINE-HOTEL.md](docs/OFFLINE-HOTEL.md).
+
+| Минимум для отеля на 10 комнат | Значение |
+|---|---|
+| Локальный компьютер | x86-64, 4 ядра, 8 ГБ ОЗУ, 128 ГБ SSD, Windows 11 Pro 64-bit |
+| Рекомендуется | 6 ядер / Intel i5, 16 ГБ ОЗУ, 256–512 ГБ SSD, UPS 600–1000 ВА |
+| Сеть | 1 Гбит/с Ethernet, роутер/коммутатор, 1 точка доступа Wi-Fi 5/6 (2 при бетонных стенах), отдельный SSID персонала WPA2/WPA3 |
+| Клиенты | ПК администратора, 2–4 смартфона/планшета горничных, 10–20 устройств |
+| Резерв | Ежедневная копия SQLite/фото/QR/логов на USB или локальный NAS |
+| Интернет | Не требуется для работы; 1С — только опционально и локально |
+
+**Русский.** Сборка для отеля разворачивается на одном локальном компьютере (Windows 11 Pro, 4–6 ядер, 8–16 ГБ ОЗУ, SSD 128–512 ГБ) и работает без интернета, без нейросетей и облака. Для 10 номеров достаточно одного гигабитного роутера/коммутатора и одной точки доступа Wi-Fi 5/6 с отдельным SSID для персонала; при бетонных стенах — две точки. Нужны ПК администратора, 2–4 мобильных устройства горничных, UPS и ежедневный backup на USB/NAS. Готовая сборка работает офлайн; первичная установка/обновление готовятся заранее на компьютере с интернетом (или через offline-пакет с зависимостями и `.next`).
+
+**English.** The hotel build runs on one local computer (Windows 11 Pro, 4–6 cores, 8–16 GB RAM, 128–512 GB SSD) with no internet, no neural networks and no cloud. For 10 rooms, one gigabit router/switch and one Wi-Fi 5/6 access point with a separate staff SSID are enough; use two APs behind thick concrete walls. Add an admin PC, 2–4 maid phones/tablets, a UPS and a daily backup to USB/NAS. The finished build runs offline; initial installation/updates are prepared in advance on an internet-connected computer (or via an offline bundle with dependencies and `.next`).
+
+**Español.** La aplicación se ejecuta en un único ordenador local (Windows 11 Pro, 4–6 núcleos, 8–16 GB de RAM, SSD de 128–512 GB) sin internet, sin redes neuronales y sin nube. Para 10 habitaciones bastan un router/switch gigabit y un punto de acceso Wi-Fi 5/6 con SSID separado para el personal; con muros de hormigón, dos AP. Se necesita un PC de administración, 2–4 móviles/tabletas de gobernantas, SAI y copia diaria a USB/NAS. La aplicación terminada funciona sin conexión; la instalación/actualización inicial se prepara en un ordenador con internet (o con un paquete offline con dependencias y `.next`).
+
+**Italiano.** L'app gira su un singolo computer locale (Windows 11 Pro, 4–6 core, 8–16 GB RAM, SSD 128–512 GB) senza internet, senza reti neurali e senza cloud. Per 10 camere bastano un router/switch gigabit e un access point Wi-Fi 5/6 con SSID separato per il personale; con muri in cemento, due AP. Servono un PC amministratore, 2–4 smartphone/tablet delle governanti, UPS e backup giornaliero su USB/NAS. L'app finita funziona offline; installazione/aggiornamento iniziali si preparano su un computer con internet (o con un pacchetto offline con dipendenze e `.next`).
+
+**Deutsch.** Die Hotel-App läuft auf einem lokalen Computer (Windows 11 Pro, 4–6 Kerne, 8–16 GB RAM, 128–512 GB SSD) ohne Internet, ohne neuronale Netze und ohne Cloud. Für 10 Zimmer reichen ein Gigabit-Router/Switch und ein Wi-Fi-5/6-Access-Point mit separatem Mitarbeiter-SSID; bei Betonwänden zwei APs. Dazu Admin-PC, 2–4 Smartphones/Tablets der Zimmermädchen, USV und tägliches Backup auf USB/NAS. Die fertige App läuft offline; Erstinstallation/Updates werden vorab auf einem internetfähigen Computer (oder als Offline-Paket mit Abhängigkeiten und `.next`) vorbereitet.
+
 ## Что уже работает
 
 | Модуль | Состояние |
