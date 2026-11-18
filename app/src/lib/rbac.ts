@@ -24,6 +24,7 @@ export const PERMISSIONS = [
   "settings.ui",
   "settings.branding",
   "photos.view",
+  "logs.view",
 ] as const;
 
 export type PermissionCode = (typeof PERMISSIONS)[number];
@@ -39,7 +40,8 @@ export const ROLE_PRESETS: Record<RoleCode, readonly PermissionCode[]> = {
       code !== "roles.manage" &&
       code !== "rooms.write" &&
       code !== "rooms.manage" &&
-      code !== "settings.branding",
+      code !== "settings.branding" &&
+      code !== "logs.view",
   ),
   MAID: [
     "rooms.read",

@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { getExcelBranding } from "@/lib/branding";
 import { prisma } from "@/lib/prisma";
 import { hasPermission } from "@/lib/rbac";
+import { logEvent } from "@/server/services/logging";
 import {
   buildWorkbook,
   lowStockRows,
@@ -38,6 +39,7 @@ export async function GET(request: NextRequest) {
   }
 
   const url = new URL(request.url);
+  const started = Date.now();
   const report = url.searchParams.get("report") ?? "stock";
   const [locale, currency] = await Promise.all([getConfiguredLocale(), getConfiguredCurrency()]);
   const labels = getReportLabels(locale);
@@ -278,6 +280,20 @@ export async function GET(request: NextRequest) {
     );
     filename = "warehouse-stock.xlsx";
   }
+
+  await logEvent({
+    module: "reports",
+    action: "reports.export",
+    outcome: "success",
+    user,
+    durationMs: Date.now() - started,
+    metadata: {
+      report,
+      from: url.searchParams.get("from") ?? null,
+      to: url.searchParams.get("to") ?? null,
+      bytes: buffer.length,
+    },
+  });
 
   return new Response(new Uint8Array(buffer), {
     headers: {

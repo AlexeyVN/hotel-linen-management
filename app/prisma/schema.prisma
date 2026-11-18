@@ -447,3 +447,29 @@ model WriteOffReason {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+/// Операционный журнал для администратора. Это диагностические события,
+/// а не юридический audit trail: Operation/AuditSession остаются источником истины.
+model LogEvent {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  level      String   @default("info")
+  module     String
+  action     String
+  outcome    String?
+  message    String?
+  userId     String?
+  userLogin  String?
+  userRole   String?
+  requestId  String?
+  entityType String?
+  entityId   String?
+  durationMs Int?
+  errorCode  String?
+  metadata   String?
+
+  @@index([createdAt])
+  @@index([module, createdAt])
+  @@index([level, createdAt])
+  @@index([userId, createdAt])
+}

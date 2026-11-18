@@ -22,4 +22,5 @@ export const PERMISSION_LABELS = {
   "settings.ui": "Общие настройки",
   "settings.branding": "Брендинг и оформление",
   "photos.view": "Просмотр фото",
+  "logs.view": "Журнал событий",
 } satisfies Record<PermissionCode, string>;

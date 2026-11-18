@@ -4,6 +4,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { logEvent } from "@/server/services/logging";
 import { rateLimit } from "@/lib/rate-limit";
 import { PERMISSIONS, type PermissionCode, type SessionUser } from "@/lib/rbac";
 
@@ -69,6 +70,13 @@ export const authOptions: NextAuthOptions = {
         const ip = clientIp(req);
         if (!rateLimit(`login:${ip}:${login}`, LOGIN_LIMIT, LOGIN_WINDOW_MS).ok) {
           logger.warn({ login, ip }, "вход отклонён rate-limit");
+          await logEvent({
+            module: "auth",
+            action: "login.rate_limit",
+            level: "warn",
+            outcome: "denied",
+            message: "Login rejected by rate limit",
+          });
           return null;
         }
 
@@ -85,6 +93,14 @@ export const authOptions: NextAuthOptions = {
 
         if (user.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
           logger.warn({ login }, "вход отклонён: учётная запись заблокирована");
+          await logEvent({
+            module: "auth",
+            action: "login.locked",
+            level: "warn",
+            outcome: "denied",
+            user: { id: user.id, login: user.login, roleCode: user.role.code },
+            message: "Login rejected: account locked",
+          });
           return null;
         }
 
@@ -100,11 +116,28 @@ export const authOptions: NextAuthOptions = {
             },
           });
           logger.warn({ login, failed }, "неверный пароль");
+          await logEvent({
+            module: "auth",
+            action: "login.failed",
+            level: "warn",
+            outcome: "failure",
+            user: { id: user.id, login: user.login, roleCode: user.role.code },
+            message: "Invalid password",
+            metadata: { failedLogins: failed },
+          });
           return null;
         }
 
         if (!user.isActive) {
           logger.warn({ login }, "вход отклонён: пользователь деактивирован");
+          await logEvent({
+            module: "auth",
+            action: "login.disabled",
+            level: "warn",
+            outcome: "denied",
+            user: { id: user.id, login: user.login, roleCode: user.role.code },
+            message: "Login rejected: user disabled",
+          });
           return null;
         }
 
@@ -113,6 +146,12 @@ export const authOptions: NextAuthOptions = {
           data: { failedLogins: 0, lockedUntil: null, lastLoginAt: new Date() },
         });
         logger.info({ login, role: user.role.code }, "успешный вход");
+        await logEvent({
+          module: "auth",
+          action: "login.success",
+          outcome: "success",
+          user: { id: user.id, login: user.login, roleCode: user.role.code },
+        });
 
         return {
           id: user.id,

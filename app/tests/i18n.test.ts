@@ -109,6 +109,7 @@ const REQUIRED_NAMESPACES = [
   "permissionsUi",
   "integration",
   "mobile",
+  "logs",
 ] as const;
 
 type Namespace = (typeof REQUIRED_NAMESPACES)[number];
@@ -175,6 +176,7 @@ const REQUIRED_KEYS: Record<Namespace, readonly string[]> = {
     "queue.status.pending",
     "pwa.update",
   ],
+  logs: ["title", "intro", "noAccess", "module", "level", "apply", "empty", "total"],
 };
 
 test("all five locale catalogs have identical nested key sets", () => {

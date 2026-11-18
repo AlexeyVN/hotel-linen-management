@@ -50,6 +50,7 @@ const NAV: NavConfig[] = [
       { href: "/admin/users", labelKey: "users", permission: "users.manage" },
       { href: "/admin/roles", labelKey: "roles", permission: "roles.manage" },
       { href: "/admin/settings/1c", labelKey: "integration", permission: "settings.integration" },
+      { href: "/admin/logs", labelKey: "logs", permission: "logs.view" },
     ],
   },
 ];
