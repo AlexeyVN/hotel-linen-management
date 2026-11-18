@@ -30,7 +30,7 @@ body:
     id: version
     attributes:
       label: Версия / коммит
-      placeholder: "v2.3.2"
+      placeholder: "v2.3.3"
   - type: dropdown
     id: area
     attributes:

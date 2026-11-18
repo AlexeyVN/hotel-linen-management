@@ -3,17 +3,15 @@
 import { TRPCClientError } from "@trpc/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc-client";
 
-const STATUS_LABELS: Record<string, string> = {
-  DRAFT: "Черновик",
-  APPLIED: "Проведена",
-};
-
 export function AuditAdmin() {
+  const t = useTranslations("audit");
+  const locale = useLocale();
   const router = useRouter();
   const utils = trpc.useUtils();
   const roomsQuery = trpc.rooms.list.useQuery();
@@ -29,7 +27,7 @@ export function AuditAdmin() {
   async function handleStart() {
     setError(null);
     if (!roomId) {
-      setError("Выберите номер");
+      setError(t("errorRoom"));
       return;
     }
     try {
@@ -40,7 +38,7 @@ export function AuditAdmin() {
       setError(
         mutationError instanceof TRPCClientError
           ? mutationError.message
-          : "Не удалось начать инвентаризацию",
+          : t("errorStart"),
       );
     }
   }
@@ -48,10 +46,9 @@ export function AuditAdmin() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold">Инвентаризация номеров</h1>
+        <h1 className="text-2xl font-semibold">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">
-          Сверка факта с учётом. Расхождение формирует корректировку остатка номера.
-          Фото — по желанию.
+          {t("intro")}
         </p>
       </header>
 
@@ -63,18 +60,18 @@ export function AuditAdmin() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Новая инвентаризация</CardTitle>
+          <CardTitle>{t("newAudit")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap items-end gap-3">
             <label className="text-sm">
-              <span className="mb-1 block text-muted-foreground">Номер</span>
+              <span className="mb-1 block text-muted-foreground">{t("room")}</span>
               <select
                 value={roomId}
                 onChange={(event) => setRoomId(event.target.value)}
                 className="h-10 rounded-md border bg-background px-3"
               >
-                <option value="">— выберите —</option>
+                <option value="">{t("choose")}</option>
                 {rooms.map((room) => (
                   <option key={room.id} value={room.id}>
                     {room.number} · {room.roomTypeName}
@@ -83,10 +80,10 @@ export function AuditAdmin() {
               </select>
             </label>
             <Button onClick={handleStart} disabled={start.isPending}>
-              {start.isPending ? "Создаём…" : "Начать"}
+              {start.isPending ? t("creating") : t("start")}
             </Button>
             <span className="text-xs text-muted-foreground">
-              Если по номеру уже есть черновик — откроется он.
+              {t("draftHint")}
             </span>
           </div>
         </CardContent>
@@ -94,21 +91,21 @@ export function AuditAdmin() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Сессии инвентаризации</CardTitle>
+          <CardTitle>{t("sessions")}</CardTitle>
         </CardHeader>
         <CardContent>
           {sessions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Пока нет ни одной инвентаризации.</p>
+            <p className="text-sm text-muted-foreground">{t("empty")}</p>
           ) : (
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left text-muted-foreground">
-                  <th className="py-2 font-medium">Номер</th>
-                  <th className="py-2 font-medium">Статус</th>
-                  <th className="py-2 font-medium">Начата</th>
-                  <th className="py-2 font-medium">Проведена</th>
-                  <th className="py-2 font-medium">Автор</th>
-                  <th className="py-2 font-medium">Фото</th>
+                  <th className="py-2 font-medium">{t("room")}</th>
+                  <th className="py-2 font-medium">{t("status")}</th>
+                  <th className="py-2 font-medium">{t("started")}</th>
+                  <th className="py-2 font-medium">{t("applied")}</th>
+                  <th className="py-2 font-medium">{t("author")}</th>
+                  <th className="py-2 font-medium">{t("photos")}</th>
                   <th className="py-2" />
                 </tr>
               </thead>
@@ -122,18 +119,18 @@ export function AuditAdmin() {
                           session.status === "APPLIED" ? "text-green-700" : "text-amber-700"
                         }
                       >
-                        {STATUS_LABELS[session.status] ?? session.status}
+                        {session.status === "DRAFT" ? t("draft") : t("appliedStatus")}
                       </span>
                     </td>
                     <td className="py-2">
-                      {new Intl.DateTimeFormat("ru-RU", {
+                      {new Intl.DateTimeFormat(locale, {
                         dateStyle: "short",
                         timeStyle: "short",
                       }).format(new Date(session.startedAt))}
                     </td>
                     <td className="py-2">
                       {session.appliedAt
-                        ? new Intl.DateTimeFormat("ru-RU", {
+                        ? new Intl.DateTimeFormat(locale, {
                             dateStyle: "short",
                             timeStyle: "short",
                           }).format(new Date(session.appliedAt))
@@ -146,7 +143,7 @@ export function AuditAdmin() {
                         href={`/admin/audit/${session.id}`}
                         className="text-primary underline"
                       >
-                        {session.status === "DRAFT" ? "Продолжить" : "Открыть"}
+                        {session.status === "DRAFT" ? t("continue") : t("open")}
                       </Link>
                     </td>
                   </tr>

@@ -1,6 +1,7 @@
 "use client";
 
 import { TRPCClientError } from "@trpc/client";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +28,29 @@ function defaultRange() {
 }
 
 export function CleaningAdmin() {
+  const t = useTranslations("cleaning");
+  const typeLabels: Record<string, string> = {
+    DAILY: t("daily"),
+    ON_DEMAND: t("onDemand"),
+    GENERAL: t("general"),
+  };
+  const priorityLabels: Record<string, string> = {
+    LOW: t("low"),
+    MEDIUM: t("medium"),
+    URGENT: t("urgent"),
+  };
+  const roomStatusLabels: Record<string, string> = {
+    CLEAN: t("clean"),
+    DIRTY: t("dirty"),
+    INSPECTED: t("inspected"),
+    OUT_OF_ORDER: t("outOfOrder"),
+  };
+  const taskStatusLabels: Record<string, string> = {
+    NEW: t("taskNew"),
+    IN_PROGRESS: t("taskInProgress"),
+    DONE: t("taskDone"),
+    CANCELLED: t("taskCancelled"),
+  };
   const utils = trpc.useUtils();
   const roomsQuery = trpc.cleaning.rooms.useQuery();
   const assigneesQuery = trpc.cleaning.assignees.useQuery();
@@ -90,10 +114,9 @@ export function CleaningAdmin() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold">Уборка</h1>
+        <h1 className="text-2xl font-semibold">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">
-          Задачи на уборку, статусы номеров и отчёт по горничным. Чек-листы — вне
-          объёма этого этапа.
+          {t("intro")}
         </p>
       </header>
 
@@ -106,27 +129,27 @@ export function CleaningAdmin() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Новая задача</CardTitle>
+          <CardTitle>{t("newTask")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap items-end gap-3">
             <label className="text-sm">
-              <span className="mb-1 block text-muted-foreground">Номер</span>
+              <span className="mb-1 block text-muted-foreground">{t("room")}</span>
               <select
                 value={form.roomId}
                 onChange={(event) => setForm({ ...form, roomId: event.target.value })}
                 className="h-10 rounded-md border bg-background px-3"
               >
-                <option value="">— выберите —</option>
+                <option value="">{t("choose")}</option>
                 {rooms.map((room) => (
                   <option key={room.id} value={room.id}>
-                    {room.number} · {room.roomTypeName} ({ROOM_STATUS_LABELS[room.cleaningStatus]})
+                    {room.number} · {room.roomTypeName} ({roomStatusLabels[room.cleaningStatus]})
                   </option>
                 ))}
               </select>
             </label>
             <label className="text-sm">
-              <span className="mb-1 block text-muted-foreground">Тип</span>
+              <span className="mb-1 block text-muted-foreground">{t("type")}</span>
               <select
                 value={form.type}
                 onChange={(event) =>
@@ -134,7 +157,7 @@ export function CleaningAdmin() {
                 }
                 className="h-10 rounded-md border bg-background px-3"
               >
-                {Object.entries(CLEANING_TYPE_LABELS).map(([code, label]) => (
+                {Object.entries(typeLabels).map(([code, label]) => (
                   <option key={code} value={code}>
                     {label}
                   </option>
@@ -142,7 +165,7 @@ export function CleaningAdmin() {
               </select>
             </label>
             <label className="text-sm">
-              <span className="mb-1 block text-muted-foreground">Приоритет</span>
+              <span className="mb-1 block text-muted-foreground">{t("priority")}</span>
               <select
                 value={form.priority}
                 onChange={(event) =>
@@ -150,7 +173,7 @@ export function CleaningAdmin() {
                 }
                 className="h-10 rounded-md border bg-background px-3"
               >
-                {Object.entries(PRIORITY_LABELS).map(([code, label]) => (
+                {Object.entries(priorityLabels).map(([code, label]) => (
                   <option key={code} value={code}>
                     {label}
                   </option>
@@ -158,13 +181,13 @@ export function CleaningAdmin() {
               </select>
             </label>
             <label className="text-sm">
-              <span className="mb-1 block text-muted-foreground">Исполнитель</span>
+              <span className="mb-1 block text-muted-foreground">{t("assignee")}</span>
               <select
                 value={form.assigneeId}
                 onChange={(event) => setForm({ ...form, assigneeId: event.target.value })}
                 className="h-10 rounded-md border bg-background px-3"
               >
-                <option value="">— не назначен —</option>
+                <option value="">{t("unassigned")}</option>
                 {assignees.map((assignee) => (
                   <option key={assignee.id} value={assignee.id}>
                     {assignee.fullName}
@@ -173,7 +196,7 @@ export function CleaningAdmin() {
               </select>
             </label>
             <label className="text-sm">
-              <span className="mb-1 block text-muted-foreground">Чек-лист</span>
+              <span className="mb-1 block text-muted-foreground">{t("checklist")}</span>
               <select
                 value={form.checklistTemplateId}
                 onChange={(event) =>
@@ -181,7 +204,7 @@ export function CleaningAdmin() {
                 }
                 className="h-10 rounded-md border bg-background px-3"
               >
-                <option value="">— без чек-листа —</option>
+                <option value="">{t("noChecklist")}</option>
                 {templates
                   .filter((template) => template.isActive)
                   .map((template) => (
@@ -192,7 +215,7 @@ export function CleaningAdmin() {
               </select>
             </label>
             <label className="text-sm">
-              <span className="mb-1 block text-muted-foreground">План, мин</span>
+              <span className="mb-1 block text-muted-foreground">{t("planMinutes")}</span>
               <Input
                 type="number"
                 min={5}
@@ -216,15 +239,15 @@ export function CleaningAdmin() {
                       comment: form.comment || undefined,
                       checklistTemplateId: form.checklistTemplateId || undefined,
                     }),
-                  "Задача создана, номер помечен грязным",
+                  t("created"),
                 )
               }
             >
-              Создать задачу
+              {t("createTask")}
             </Button>
           </div>
           <label className="mt-3 block text-sm">
-            <span className="mb-1 block text-muted-foreground">Комментарий</span>
+            <span className="mb-1 block text-muted-foreground">{t("comment")}</span>
             <Input
               value={form.comment}
               maxLength={300}
@@ -236,11 +259,11 @@ export function CleaningAdmin() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Задачи ({tasks.length})</CardTitle>
+          <CardTitle>{t("tasks")} ({tasks.length})</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <label className="text-sm">
-            <span className="mb-1 block text-muted-foreground">Фильтр по статусу</span>
+            <span className="mb-1 block text-muted-foreground">{t("statusFilter")}</span>
             <select
               value={statusFilter}
               onChange={(event) =>
@@ -248,8 +271,8 @@ export function CleaningAdmin() {
               }
               className="h-10 rounded-md border bg-background px-3"
             >
-              <option value="">Все</option>
-              {Object.entries(TASK_STATUS_LABELS).map(([code, label]) => (
+              <option value="">{t("all")}</option>
+              {Object.entries(taskStatusLabels).map(([code, label]) => (
                 <option key={code} value={code}>
                   {label}
                 </option>
@@ -258,18 +281,18 @@ export function CleaningAdmin() {
           </label>
 
           {tasks.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Задач нет.</p>
+            <p className="text-sm text-muted-foreground">{t("empty")}</p>
           ) : (
             <DataTable minWidth="1000px">
               <thead>
                 <tr className="border-b text-left text-muted-foreground">
-                  <th className="py-2 font-medium">Номер</th>
-                  <th className="py-2 font-medium">Тип</th>
-                  <th className="py-2 font-medium">Приоритет</th>
-                  <th className="py-2 font-medium">Статус</th>
-                  <th className="py-2 font-medium">Исполнитель</th>
-                  <th className="py-2 font-medium">Чек-лист</th>
-                  <th className="py-2 font-medium">План</th>
+                  <th className="py-2 font-medium">{t("room")}</th>
+                  <th className="py-2 font-medium">{t("type")}</th>
+                  <th className="py-2 font-medium">{t("priority")}</th>
+                  <th className="py-2 font-medium">{t("statusHeader")}</th>
+                  <th className="py-2 font-medium">{t("assignee")}</th>
+                  <th className="py-2 font-medium">{t("checklist")}</th>
+                  <th className="py-2 font-medium">{t("planHeader")}</th>
                   <th className="py-2" />
                 </tr>
               </thead>
@@ -277,7 +300,7 @@ export function CleaningAdmin() {
                 {tasks.map((task) => (
                   <tr key={task.id} className="border-b last:border-0">
                     <td className="py-2 font-medium">{task.roomNumber}</td>
-                    <td className="py-2">{CLEANING_TYPE_LABELS[task.type] ?? task.type}</td>
+                    <td className="py-2">{typeLabels[task.type] ?? task.type}</td>
                     <td className="py-2">
                       <span
                         className={
@@ -288,10 +311,10 @@ export function CleaningAdmin() {
                               : "text-green-700"
                         }
                       >
-                        {PRIORITY_LABELS[task.priority] ?? task.priority}
+                        {priorityLabels[task.priority] ?? task.priority}
                       </span>
                     </td>
-                    <td className="py-2">{TASK_STATUS_LABELS[task.status] ?? task.status}</td>
+                    <td className="py-2">{taskStatusLabels[task.status] ?? task.status}</td>
                     <td className="py-2">
                       {task.status === "NEW" ? (
                         <select
@@ -303,12 +326,12 @@ export function CleaningAdmin() {
                                   taskId: task.id,
                                   assigneeId: event.target.value || null,
                                 }),
-                              "Исполнитель назначен",
+                              t("assigned"),
                             )
                           }
                           className="h-9 rounded-md border bg-background px-2"
                         >
-                          <option value="">— не назначен —</option>
+                          <option value="">{t("unassigned")}</option>
                           {assignees.map((assignee) => (
                             <option key={assignee.id} value={assignee.id}>
                               {assignee.fullName}
@@ -319,13 +342,13 @@ export function CleaningAdmin() {
                         task.assigneeName ?? "—"
                       )}
                     </td>
-                    <td className="py-2">{task.plannedMinutes ? `${task.plannedMinutes} мин` : "—"}</td>
+                    <td className="py-2">{task.plannedMinutes ? t("minutesShort", { count: task.plannedMinutes }) : "—"}</td>
                     <td className="py-2">
                       {task.checklist ? (
                         <span className="text-xs">
                           {task.checklist.name}
                           <span className="block text-muted-foreground">
-                            отмечено: {task.checklist.answered}
+                            {t("answered", { count: task.checklist.answered })}
                           </span>
                         </span>
                       ) : task.status === "NEW" ? (
@@ -339,13 +362,13 @@ export function CleaningAdmin() {
                                       taskId: task.id,
                                       templateId: event.target.value,
                                     }),
-                                  "Чек-лист прикреплён",
+                                  t("attached"),
                                 )
                               : undefined
                           }
                           className="h-9 rounded-md border bg-background px-2 text-xs"
                         >
-                          <option value="">— прикрепить —</option>
+                          <option value="">{t("attach")}</option>
                           {templates
                             .filter((template) => template.isActive)
                             .map((template) => (
@@ -368,11 +391,11 @@ export function CleaningAdmin() {
                             run(
                               () =>
                                 setStatus.mutateAsync({ taskId: task.id, status: "CANCELLED" }),
-                              "Задача отменена",
+                              t("cancelled"),
                             )
                           }
                         >
-                          Отменить
+                          {t("cancel")}
                         </Button>
                       ) : null}
                     </td>
@@ -386,16 +409,16 @@ export function CleaningAdmin() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Статусы номеров</CardTitle>
+          <CardTitle>{t("statuses")}</CardTitle>
         </CardHeader>
         <CardContent>
           <DataTable minWidth="1000px">
             <thead>
               <tr className="border-b text-left text-muted-foreground">
-                <th className="py-2 font-medium">Номер</th>
-                <th className="py-2 font-medium">Этаж</th>
-                <th className="py-2 font-medium">Тип</th>
-                <th className="py-2 font-medium">Статус уборки</th>
+                <th className="py-2 font-medium">{t("room")}</th>
+                <th className="py-2 font-medium">{t("floor")}</th>
+                <th className="py-2 font-medium">{t("type")}</th>
+                <th className="py-2 font-medium">{t("cleaningStatus")}</th>
               </tr>
             </thead>
             <tbody>
@@ -418,12 +441,12 @@ export function CleaningAdmin() {
                                 | "INSPECTED"
                                 | "OUT_OF_ORDER",
                             }),
-                          `Номер ${room.number}: статус обновлён`,
+                          t("roomStatusUpdated", { number: room.number }),
                         )
                       }
                       className="h-9 rounded-md border bg-background px-2"
                     >
-                      {Object.entries(ROOM_STATUS_LABELS).map(([code, label]) => (
+                      {Object.entries(roomStatusLabels).map(([code, label]) => (
                         <option key={code} value={code}>
                           {label}
                         </option>
@@ -440,7 +463,7 @@ export function CleaningAdmin() {
       <Card>
         <CardHeader>
           <CardTitle>
-            Отчёт за {range.from} — {range.to}
+            {t("reportPeriod", { from: range.from, to: range.to })}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -448,20 +471,20 @@ export function CleaningAdmin() {
             href={`/api/reports/export?report=tasks&from=${range.from}&to=${range.to}`}
             className="inline-flex h-10 items-center rounded-md border border-primary px-4 text-sm text-primary hover:bg-muted"
           >
-            Скачать Excel
+            {t("downloadExcel")}
           </a>
           {report.length === 0 ? (
-            <p className="text-sm text-muted-foreground">За период задач нет.</p>
+            <p className="text-sm text-muted-foreground">{t("noTasksPeriod")}</p>
           ) : (
             <DataTable minWidth="1000px">
               <thead>
                 <tr className="border-b text-left text-muted-foreground">
-                  <th className="py-2 font-medium">Исполнитель</th>
-                  <th className="py-2 text-right font-medium">Всего</th>
-                  <th className="py-2 text-right font-medium">Выполнено</th>
-                  <th className="py-2 text-right font-medium">В работе</th>
-                  <th className="py-2 text-right font-medium">Отменено</th>
-                  <th className="py-2 text-right font-medium">Среднее, мин</th>
+                  <th className="py-2 font-medium">{t("assignee")}</th>
+                  <th className="py-2 text-right font-medium">{t("total")}</th>
+                  <th className="py-2 text-right font-medium">{t("done")}</th>
+                  <th className="py-2 text-right font-medium">{t("inProgress")}</th>
+                  <th className="py-2 text-right font-medium">{t("cancelledCount")}</th>
+                  <th className="py-2 text-right font-medium">{t("avgMinutes")}</th>
                 </tr>
               </thead>
               <tbody>

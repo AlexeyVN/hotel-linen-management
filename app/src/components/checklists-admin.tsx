@@ -1,6 +1,7 @@
 "use client";
 
 import { TRPCClientError } from "@trpc/client";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +15,7 @@ function errorText(error: unknown): string {
 }
 
 export function ChecklistsAdmin() {
+  const t = useTranslations("checklists");
   const utils = trpc.useUtils();
   const templatesQuery = trpc.checklists.list.useQuery();
   const createTemplate = trpc.checklists.createTemplate.useMutation();
@@ -48,10 +50,9 @@ export function ChecklistsAdmin() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold">Чек-листы уборки</h1>
+        <h1 className="text-2xl font-semibold">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">
-          Шаблон прикрепляется к задаче; задачу нельзя завершить, пока все пункты не
-          отмечены, а обязательные фото не загружены.
+          {t("intro")}
         </p>
       </header>
 
@@ -65,7 +66,7 @@ export function ChecklistsAdmin() {
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
         <Card>
           <CardHeader>
-            <CardTitle>Шаблоны</CardTitle>
+            <CardTitle>{t("templates")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {templates.map((template) => (
@@ -80,7 +81,7 @@ export function ChecklistsAdmin() {
                 <span>
                   {template.name}
                   <span className="block text-xs text-muted-foreground">
-                    пунктов: {template.items.length}
+                    {t("itemsCount", { count: template.items.length })}
                   </span>
                 </span>
                 <span
@@ -88,7 +89,7 @@ export function ChecklistsAdmin() {
                     template.isActive ? "text-xs text-green-700" : "text-xs text-muted-foreground"
                   }
                 >
-                  {template.isActive ? "активен" : "выключен"}
+                  {template.isActive ? t("active") : t("inactive")}
                 </span>
               </button>
             ))}
@@ -96,7 +97,7 @@ export function ChecklistsAdmin() {
             <div className="border-t pt-2">
               <Input
                 value={templateName}
-                placeholder="Новый шаблон"
+                placeholder={t("newTemplate")}
                 onChange={(event) => setTemplateName(event.target.value)}
               />
               <Button
@@ -107,10 +108,10 @@ export function ChecklistsAdmin() {
                     const created = await createTemplate.mutateAsync({ name: templateName });
                     setTemplateName("");
                     setSelectedId(created.id);
-                  }, "Шаблон создан")
+                  }, t("templateCreated"))
                 }
               >
-                Создать шаблон
+                {t("createTemplate")}
               </Button>
             </div>
           </CardContent>
@@ -118,11 +119,11 @@ export function ChecklistsAdmin() {
 
         <Card>
           <CardHeader>
-            <CardTitle>{selected ? selected.name : "Выберите шаблон"}</CardTitle>
+            <CardTitle>{selected ? selected.name : t("selectTemplate")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {!selected ? (
-              <p className="text-sm text-muted-foreground">Создайте шаблон слева.</p>
+              <p className="text-sm text-muted-foreground">{t("createFirst")}</p>
             ) : (
               <>
                 <div className="flex flex-wrap gap-2">
@@ -135,20 +136,20 @@ export function ChecklistsAdmin() {
                             id: selected.id,
                             isActive: !selected.isActive,
                           }),
-                        selected.isActive ? "Шаблон выключен" : "Шаблон включён",
+                        selected.isActive ? t("templateDisabled") : t("templateEnabled"),
                       )
                     }
                   >
-                    {selected.isActive ? "Выключить шаблон" : "Включить шаблон"}
+                    {selected.isActive ? t("disableTemplate") : t("enableTemplate")}
                   </Button>
                 </div>
 
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b text-left text-muted-foreground">
-                      <th className="py-2 font-medium">Пункт</th>
-                      <th className="py-2 font-medium">Фото</th>
-                      <th className="py-2 font-medium">Доп. ответ</th>
+                      <th className="py-2 font-medium">{t("item")}</th>
+                      <th className="py-2 font-medium">{t("photoHeader")}</th>
+                      <th className="py-2 font-medium">{t("extraHeader")}</th>
                       <th className="py-2" />
                     </tr>
                   </thead>
@@ -183,7 +184,7 @@ export function ChecklistsAdmin() {
                                       id: item.id,
                                       photoRequired: event.target.checked,
                                     }),
-                                  "Пункт обновлён",
+                                  t("itemUpdated"),
                                 )
                               }
                             />
@@ -191,7 +192,7 @@ export function ChecklistsAdmin() {
                           <td className="py-2">
                             <Input
                               value={draft.extra}
-                              placeholder="Например, Н/П"
+                              placeholder={t("extraPlaceholder")}
                               onChange={(event) =>
                                 setDrafts({
                                   ...drafts,
@@ -214,20 +215,20 @@ export function ChecklistsAdmin() {
                                         text: draft.text,
                                         extraOptionText: draft.extra || null,
                                       }),
-                                    "Пункт сохранён",
+                                    t("itemSaved"),
                                   )
                                 }
                               >
-                                Сохранить
+                                {t("save")}
                               </Button>
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() =>
-                                  run(() => removeItem.mutateAsync({ id: item.id }), "Пункт удалён")
+                                  run(() => removeItem.mutateAsync({ id: item.id }), t("itemDeleted"))
                                 }
                               >
-                                Удалить
+                                {t("delete")}
                               </Button>
                             </div>
                           </td>
@@ -239,14 +240,14 @@ export function ChecklistsAdmin() {
 
                 <div className="flex flex-wrap items-end gap-2 border-t pt-3">
                   <label className="min-w-64 flex-1 text-sm">
-                    <span className="mb-1 block text-muted-foreground">Новый пункт</span>
+                    <span className="mb-1 block text-muted-foreground">{t("newItem")}</span>
                     <Input
                       value={newItem.text}
                       onChange={(event) => setNewItem({ ...newItem, text: event.target.value })}
                     />
                   </label>
                   <label className="text-sm">
-                    <span className="mb-1 block text-muted-foreground">Доп. ответ</span>
+                    <span className="mb-1 block text-muted-foreground">{t("extraHeader")}</span>
                     <Input
                       value={newItem.extra}
                       onChange={(event) => setNewItem({ ...newItem, extra: event.target.value })}
@@ -261,7 +262,7 @@ export function ChecklistsAdmin() {
                         setNewItem({ ...newItem, photoRequired: event.target.checked })
                       }
                     />
-                    фото обязательно
+                    {t("photoRequired")}
                   </label>
                   <Button
                     disabled={newItem.text.trim().length === 0}
@@ -274,10 +275,10 @@ export function ChecklistsAdmin() {
                           extraOptionText: newItem.extra || undefined,
                         });
                         setNewItem({ text: "", photoRequired: false, extra: "" });
-                      }, "Пункт добавлен")
+                      }, t("itemAdded"))
                     }
                   >
-                    Добавить пункт
+                    {t("addItem")}
                   </Button>
                 </div>
               </>

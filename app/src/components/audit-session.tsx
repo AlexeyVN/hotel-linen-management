@@ -2,6 +2,7 @@
 
 import { TRPCClientError } from "@trpc/client";
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +17,8 @@ function errorText(error: unknown): string {
 }
 
 export function AuditSessionView({ sessionId }: { sessionId: string }) {
+  const t = useTranslations("auditSession");
+  const locale = useLocale();
   const money = useMoney();
   const utils = trpc.useUtils();
   const sessionQuery = trpc.audit.get.useQuery({ sessionId });
@@ -69,14 +72,14 @@ export function AuditSessionView({ sessionId }: { sessionId: string }) {
     for (const line of session.lines) {
       const raw = Number(facts[line.itemId] ?? line.factQty);
       if (!Number.isInteger(raw) || raw < 0) {
-        setError(`Позиция «${line.itemName}»: нужно целое число ≥ 0`);
+        setError(t("invalidQty", { name: line.itemName }));
         return;
       }
       lines.push({ itemId: line.itemId, factQty: raw });
     }
     try {
       await saveDraft.mutateAsync({ sessionId, lines });
-      setNotice("Черновик сохранён");
+      setNotice(t("draftSaved"));
       await utils.audit.get.invalidate({ sessionId });
       await utils.audit.list.invalidate();
     } catch (mutationError) {
@@ -91,9 +94,12 @@ export function AuditSessionView({ sessionId }: { sessionId: string }) {
     try {
       const result = await apply.mutateAsync({ sessionId });
       setNotice(
-        `Инвентаризация проведена. Расхождений: ${result.summary.changed} ` +
-          `(излишек ${result.summary.increase}, недостача ${result.summary.decrease}) · ` +
-          `стоимость расхождений ${money(result.summary.valueKopecks)}.`,
+        t("appliedSummary", {
+          changed: result.summary.changed,
+          increase: result.summary.increase,
+          decrease: result.summary.decrease,
+          value: money(result.summary.valueKopecks),
+        }),
       );
       await utils.audit.get.invalidate({ sessionId });
       await utils.audit.list.invalidate();
@@ -117,9 +123,9 @@ export function AuditSessionView({ sessionId }: { sessionId: string }) {
       });
       if (!response.ok) {
         const data = (await response.json().catch(() => ({}))) as { error?: string };
-        throw new Error(data.error ?? "Не удалось загрузить фото");
+        throw new Error(data.error ?? t("loadPhotoError"));
       }
-      setNotice("Фото загружено");
+      setNotice(t("photoUploaded"));
       await utils.audit.get.invalidate({ sessionId });
       await utils.audit.list.invalidate();
     } catch (uploadError) {
@@ -130,7 +136,7 @@ export function AuditSessionView({ sessionId }: { sessionId: string }) {
   }
 
   if (sessionQuery.isLoading) {
-    return <p className="text-sm text-muted-foreground">Загружаем инвентаризацию…</p>;
+    return <p className="text-sm text-muted-foreground">{t("loading")}</p>;
   }
   if (sessionQuery.error) {
     return (
@@ -148,20 +154,20 @@ export function AuditSessionView({ sessionId }: { sessionId: string }) {
     <div className="max-w-5xl space-y-6">
       <header className="space-y-1">
         <Link href="/admin/audit" className="text-sm text-primary underline">
-          ← К списку инвентаризаций
+          {t("back")}
         </Link>
-        <h1 className="text-2xl font-semibold">Номер {session.roomNumber}</h1>
+        <h1 className="text-2xl font-semibold">{t("room", { number: session.roomNumber })}</h1>
         <p className="text-sm text-muted-foreground">
-          Статус: {isDraft ? "черновик" : "проведена"} · автор {session.userFullName} ·{" "}
-          {new Intl.DateTimeFormat("ru-RU", {
+          {t("status")}: {isDraft ? t("draft") : t("applied")} · {t("author", { name: session.userFullName })} ·{" "}
+          {new Intl.DateTimeFormat(locale, {
             dateStyle: "short",
             timeStyle: "short",
           }).format(new Date(session.startedAt))}
           {session.appliedAt
-            ? ` · применена ${new Intl.DateTimeFormat("ru-RU", {
+            ? ` · ${t("appliedAt", { date: new Intl.DateTimeFormat(locale, {
                 dateStyle: "short",
                 timeStyle: "short",
-              }).format(new Date(session.appliedAt))}`
+              }).format(new Date(session.appliedAt)) })}`
             : ""}
         </p>
       </header>
@@ -176,21 +182,21 @@ export function AuditSessionView({ sessionId }: { sessionId: string }) {
       <Card>
         <CardHeader>
           <CardTitle>
-            Остатки: учёт против факта
-            {isDraft ? ` · расхождений: ${changed}` : ""}
+            {t("stockVsFact")}
+            {isDraft ? ` · ${t("discrepancies", { count: changed })}` : ""}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-left text-muted-foreground">
-                <th className="whitespace-nowrap py-2 font-medium">Позиция</th>
-                <th className="whitespace-nowrap py-2 pl-3 text-right font-medium">Учёт</th>
-                <th className="whitespace-nowrap py-2 pl-3 text-right font-medium">Факт</th>
-                <th className="whitespace-nowrap py-2 pl-3 text-right font-medium">Расхождение</th>
-                <th className="whitespace-nowrap py-2 pl-3 text-right font-medium">Цена</th>
-                <th className="whitespace-nowrap py-2 pl-3 text-right font-medium">Стоимость Δ</th>
-                {showDates ? <th className="whitespace-nowrap py-2 pl-4 font-medium">Поступление</th> : null}
+                <th className="whitespace-nowrap py-2 font-medium">{t("item")}</th>
+                <th className="whitespace-nowrap py-2 pl-3 text-right font-medium">{t("book")}</th>
+                <th className="whitespace-nowrap py-2 pl-3 text-right font-medium">{t("fact")}</th>
+                <th className="whitespace-nowrap py-2 pl-3 text-right font-medium">{t("difference")}</th>
+                <th className="whitespace-nowrap py-2 pl-3 text-right font-medium">{t("price")}</th>
+                <th className="whitespace-nowrap py-2 pl-3 text-right font-medium">{t("valueDelta")}</th>
+                {showDates ? <th className="whitespace-nowrap py-2 pl-4 font-medium">{t("receipt")}</th> : null}
               </tr>
             </thead>
             <tbody>
@@ -239,7 +245,7 @@ export function AuditSessionView({ sessionId }: { sessionId: string }) {
                     {showDates ? (
                       <td className="whitespace-nowrap py-2 pl-4 text-muted-foreground">
                         {line.lastReceiptAt
-                          ? new Intl.DateTimeFormat("ru-RU").format(
+                          ? new Intl.DateTimeFormat(locale).format(
                               new Date(line.lastReceiptAt),
                             )
                           : "—"}
@@ -252,27 +258,26 @@ export function AuditSessionView({ sessionId }: { sessionId: string }) {
           </table>
 
           <p className="mt-3 text-sm">
-            Стоимость расхождений: <strong>{money(valueTotals.value)}</strong>
-            {" · "}излишек {money(valueTotals.surplus)}
-            {" · "}недостача {money(valueTotals.shortage)}
+            {t("totalValue")} <strong>{money(valueTotals.value)}</strong>
+            {" · "}{t("surplus", { value: money(valueTotals.surplus) })}
+            {" · "}{t("shortage", { value: money(valueTotals.shortage) })}
           </p>
 
           {isDraft ? (
             <div className="mt-4 flex flex-wrap gap-3">
               <Button variant="outline" onClick={handleSave} disabled={saveDraft.isPending}>
-                Сохранить черновик
+                {t("saveDraft")}
               </Button>
               <Button onClick={handleApply} disabled={apply.isPending}>
-                {apply.isPending ? "Проводим…" : "Применить инвентаризацию"}
+                {apply.isPending ? t("applying") : t("apply")}
               </Button>
               <span className="text-xs text-muted-foreground">
-                Применение создаёт корректировку остатка — отмена только обратной операцией.
+                {t("applyWarning")}
               </span>
             </div>
           ) : (
             <p className="mt-4 text-sm text-muted-foreground">
-              Инвентаризация проведена, правки запрещены. Исправление — новой
-              инвентаризацией.
+              {t("appliedLocked")}
             </p>
           )}
         </CardContent>
@@ -280,11 +285,11 @@ export function AuditSessionView({ sessionId }: { sessionId: string }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Фотофиксация (необязательно)</CardTitle>
+          <CardTitle>{t("photosTitle")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {session.photos.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Фото нет.</p>
+            <p className="text-sm text-muted-foreground">{t("noPhotos")}</p>
           ) : (
             <div className="flex flex-wrap gap-3">
               {session.photos.map((photo) => (
@@ -299,7 +304,7 @@ export function AuditSessionView({ sessionId }: { sessionId: string }) {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={`/api/photos/${photo.id}`}
-                    alt="Фото инвентаризации"
+                    alt={t("photoAlt")}
                     className="h-full w-full object-cover"
                   />
                 </a>
@@ -309,7 +314,7 @@ export function AuditSessionView({ sessionId }: { sessionId: string }) {
           {isDraft ? (
             <label className="block text-sm">
               <span className="mb-1 block text-muted-foreground">
-                Снять или выбрать фото (JPEG/PNG/WebP, до 5 МБ)
+                {t("photoPick")}
               </span>
               <input
                 type="file"
@@ -324,7 +329,7 @@ export function AuditSessionView({ sessionId }: { sessionId: string }) {
               />
             </label>
           ) : null}
-          {uploading ? <p className="text-sm text-muted-foreground">Загружаем фото…</p> : null}
+          {uploading ? <p className="text-sm text-muted-foreground">{t("uploading")}</p> : null}
         </CardContent>
       </Card>
     </div>

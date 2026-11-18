@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { ensureQr, imageDataUrl } from "@/server/services/qr";
 import { PrintButton } from "@/components/print-button";
 import { type QrPayloadFormat } from "@/lib/domain/qr";
@@ -13,10 +14,11 @@ export default async function QrPrintPage({
 }: {
   searchParams: Promise<{ type?: string; payload?: string }>;
 }) {
+  const t = await getTranslations("qrPrint");
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (!hasPermission(user, "rooms.read")) {
-    return <p className="p-6 text-sm text-destructive">Нет права на печать меток.</p>;
+    return <p className="p-6 text-sm text-destructive">{t("noPermission")}</p>;
   }
 
   const params = await searchParams;
@@ -67,7 +69,7 @@ export default async function QrPrintPage({
     }
   }
 
-  const caption = objectType === "room" ? "Номера" : "Позиции";
+  const caption = objectType === "room" ? t("rooms") : t("items");
 
   return (
     <div className="mx-auto max-w-5xl bg-white p-6 text-black">
@@ -80,9 +82,9 @@ export default async function QrPrintPage({
       `}</style>
       <div className="no-print mb-4 flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold">Метки QR: {caption}</h1>
+          <h1 className="text-xl font-semibold">{t("title", { caption })}</h1>
           <p className="text-sm text-muted-foreground">
-            Формат нагрузки: {format} · всего {labels.length}
+            {t("payloadFormat", { format, count: labels.length })}
           </p>
         </div>
         <PrintButton />

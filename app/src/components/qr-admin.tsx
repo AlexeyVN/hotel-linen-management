@@ -1,6 +1,7 @@
 "use client";
 
 import { TRPCClientError } from "@trpc/client";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +24,8 @@ interface Generated {
 type SavedGenerated = Generated & { objectKey: string; paramKey: string };
 
 export function QrAdmin() {
+  const t = useTranslations("qr");
+  const locale = useLocale();
   const utils = trpc.useUtils();
   const roomsQuery = trpc.rooms.list.useQuery();
   const itemsQuery = trpc.items.list.useQuery();
@@ -67,7 +70,7 @@ export function QrAdmin() {
   async function handleGenerate() {
     setError(null);
     if (!objectId) {
-      setError("Выберите объект");
+      setError(t("errorSelect"));
       return;
     }
     const requestKey = selectionKey;
@@ -92,7 +95,7 @@ export function QrAdmin() {
       setError(
         mutationError instanceof TRPCClientError
           ? mutationError.message
-          : "Не удалось сгенерировать QR",
+          : t("errorGenerate"),
       );
     }
   }
@@ -100,11 +103,8 @@ export function QrAdmin() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold">QR-коды</h1>
-        <p className="text-sm text-muted-foreground">
-          Метки для номеров и позиций. Три формата нагрузки (URL, JSON, текст) и два
-          формата изображения (PNG, SVG); сканер принимает любой из них.
-        </p>
+        <h1 className="text-2xl font-semibold">{t("title")}</h1>
+        <p className="text-sm text-muted-foreground">{t("intro")}</p>
       </header>
 
       {error ? (
@@ -116,12 +116,12 @@ export function QrAdmin() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Параметры метки</CardTitle>
+            <CardTitle>{t("params")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex flex-wrap gap-3">
               <label className="text-sm">
-                <span className="mb-1 block text-muted-foreground">Объект</span>
+                <span className="mb-1 block text-muted-foreground">{t("object")}</span>
                 <select
                   value={objectType}
                   onChange={(event) => {
@@ -132,19 +132,19 @@ export function QrAdmin() {
                   }}
                   className="h-10 rounded-md border bg-background px-3"
                 >
-                  <option value="room">Номер</option>
-                  <option value="item">Позиция</option>
+                  <option value="room">{t("room")}</option>
+                  <option value="item">{t("item")}</option>
                 </select>
               </label>
 
               <label className="min-w-56 flex-1 text-sm">
-                <span className="mb-1 block text-muted-foreground">Конкретный</span>
+                <span className="mb-1 block text-muted-foreground">{t("specific")}</span>
                 <select
                   value={objectId}
                   onChange={(event) => { setObjectId(event.target.value); setParamsDirty(false); }}
                   className="h-10 w-full rounded-md border bg-background px-3"
                 >
-                  <option value="">— выберите —</option>
+                  <option value="">{t("choose")}</option>
                   {objects.map((object) => (
                     <option key={object.id} value={object.id}>
                       {object.label}
@@ -156,20 +156,20 @@ export function QrAdmin() {
 
             <div className="flex flex-wrap gap-3">
               <label className="text-sm">
-                <span className="mb-1 block text-muted-foreground">Формат нагрузки</span>
+                <span className="mb-1 block text-muted-foreground">{t("payloadFormat")}</span>
                 <select
                   value={payloadFormat}
                   onChange={(event) => { setPayloadFormat(event.target.value as PayloadFormat); setParamsDirty(true); }}
                   className="h-10 rounded-md border bg-background px-3"
                 >
-                  <option value="url">URL (/r/101 или /i/code)</option>
-                  <option value="json">JSON {"{v,type,code,id}"}</option>
-                  <option value="text">Текст HOTEL:ROOM:101</option>
+                  <option value="url">{t("payloadUrl")}</option>
+                  <option value="json">{t("payloadJson")}</option>
+                  <option value="text">{t("payloadText")}</option>
                 </select>
               </label>
 
               <label className="text-sm">
-                <span className="mb-1 block text-muted-foreground">Формат файла</span>
+                <span className="mb-1 block text-muted-foreground">{t("fileFormat")}</span>
                 <select
                   value={imageFormat}
                   onChange={(event) => { setImageFormat(event.target.value as ImageFormat); setParamsDirty(true); }}
@@ -181,7 +181,7 @@ export function QrAdmin() {
               </label>
 
               <label className="text-sm">
-                <span className="mb-1 block text-muted-foreground">Размер, px</span>
+                <span className="mb-1 block text-muted-foreground">{t("size")}</span>
                 <select
                   value={size}
                   onChange={(event) => { setSize(Number(event.target.value)); setParamsDirty(true); }}
@@ -196,7 +196,7 @@ export function QrAdmin() {
 
             <div className="flex flex-wrap gap-2">
               <Button onClick={handleGenerate} disabled={generate.isPending}>
-                {generate.isPending ? "Генерируем…" : "Сгенерировать и сохранить"}
+                {generate.isPending ? t("generating") : t("generate")}
               </Button>
               <a
                 href="/admin/qr/print?type=room&payload=url"
@@ -204,7 +204,7 @@ export function QrAdmin() {
                 rel="noreferrer"
                 className="inline-flex h-10 items-center rounded-md border px-4 text-sm hover:bg-muted"
               >
-                Печать листа номеров
+                {t("printRooms")}
               </a>
               <a
                 href="/admin/qr/print?type=item&payload=url"
@@ -212,7 +212,7 @@ export function QrAdmin() {
                 rel="noreferrer"
                 className="inline-flex h-10 items-center rounded-md border px-4 text-sm hover:bg-muted"
               >
-                Печать листа позиций
+                {t("printItems")}
               </a>
             </div>
           </CardContent>
@@ -220,27 +220,29 @@ export function QrAdmin() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Предпросмотр</CardTitle>
+            <CardTitle>{t("preview")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {objectId ? (
               statusQuery.isLoading ? (
-                <p className="text-sm text-muted-foreground">Проверяем сохранённую метку…</p>
+                <p className="text-sm text-muted-foreground">{t("checking")}</p>
               ) : statusQuery.data ? (
                 <div className="rounded-md border p-3 text-sm">
                   <p>
-                    Метка привязана к объекту ·{" "}
+                    {t("attached")} ·{" "}
                     <span className={statusQuery.data.stale ? "text-amber-700" : "text-green-700"}>
-                      {statusQuery.data.stale ? "устарела — перегенерируйте" : "актуальна"}
+                      {statusQuery.data.stale ? t("stale") : t("upToDate")}
                     </span>
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {statusQuery.data.payloadFormat.toUpperCase()} ·{" "}
-                    {statusQuery.data.imageFormat.toUpperCase()} · создана{" "}
-                    {new Intl.DateTimeFormat("ru-RU", {
-                      dateStyle: "short",
-                      timeStyle: "short",
-                    }).format(new Date(statusQuery.data.createdAt))}
+                    {statusQuery.data.imageFormat.toUpperCase()}{" "}
+                    {t("created", {
+                      date: new Intl.DateTimeFormat(locale, {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      }).format(new Date(statusQuery.data.createdAt)),
+                    })}
                   </p>
                   <a
                     href={statusQuery.data.imageUrl}
@@ -248,11 +250,11 @@ export function QrAdmin() {
                     rel="noreferrer"
                     className="mt-1 inline-block text-primary underline"
                   >
-                    Открыть сохранённый QR
+                    {t("openSaved")}
                   </a>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">Для объекта ещё нет сохранённой метки.</p>
+                <p className="text-sm text-muted-foreground">{t("noSaved")}</p>
               )
             ) : null}
 
@@ -260,7 +262,7 @@ export function QrAdmin() {
               <>
                 <div className="flex h-64 items-center justify-center rounded-md border bg-white p-2">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={imageSrc} alt="QR-код" className="max-h-full max-w-full" />
+                  <img src={imageSrc} alt={t("qrAlt")} className="max-h-full max-w-full" />
                 </div>
                 <code className="block break-all rounded-md bg-muted p-2 text-xs">
                   {result.payload}
@@ -269,23 +271,21 @@ export function QrAdmin() {
                   href={`/api/qr/${result.id}?download=1`}
                   className="inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm text-primary-foreground"
                 >
-                  Скачать {result.imageFormat.toUpperCase()}
+                  {t("download", { format: result.imageFormat.toUpperCase() })}
                 </a>
               </>
             ) : paramsDirty ? (
-              <p className="text-sm text-amber-700">
-                Параметры метки изменены — нажмите «Сгенерировать и сохранить» заново.
-              </p>
+              <p className="text-sm text-amber-700">{t("paramsChanged")}</p>
             ) : statusQuery.data && !statusQuery.data.stale ? (
               <>
                 <p className="text-xs text-muted-foreground">
-                  Сохранённая метка для выбранного объекта
+                  {t("savedLabel")}
                 </p>
                 <div className="flex h-64 items-center justify-center rounded-md border bg-white p-2">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={statusQuery.data.imageUrl}
-                    alt="Сохранённый QR-код"
+                    alt={t("savedQrAlt")}
                     className="max-h-full max-w-full"
                   />
                 </div>
@@ -296,16 +296,16 @@ export function QrAdmin() {
                   href={`/api/qr/${statusQuery.data.id}?download=1`}
                   className="inline-flex h-10 items-center rounded-md border px-4 text-sm hover:bg-muted"
                 >
-                  Скачать {statusQuery.data.imageFormat.toUpperCase()}
+                  {t("download", { format: statusQuery.data.imageFormat.toUpperCase() })}
                 </a>
               </>
             ) : statusQuery.data?.stale ? (
               <p className="text-sm text-amber-700">
-                Сохранённая метка устарела — перегенерируйте её.
+                {t("staleRegen")}
               </p>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Сгенерируйте метку — здесь появится изображение и нагрузка.
+                {t("generateHint")}
               </p>
             )}
           </CardContent>
@@ -314,13 +314,10 @@ export function QrAdmin() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Проверка кода</CardTitle>
+          <CardTitle>{t("checkTitle")}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Проверить метку можно на телефоне: «Главная → Сканировать QR» — сканер
-            принимает URL, JSON и текстовый формат, а также ручной ввод кода.
-          </p>
+          <p className="text-sm text-muted-foreground">{t("checkHint")}</p>
         </CardContent>
       </Card>
     </div>
