@@ -594,6 +594,7 @@
                     "title":  "Etichette QR: {caption}",
                     "rooms":  "Camere",
                     "noPermission":  "Nessun permesso per stampare etichette.",
-                    "items":  "Articoli"
+                    "items":  "Articoli",
+                    "print":  "Stampa"
                 }
 }

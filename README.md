@@ -1,6 +1,6 @@
 # Белая пристань — учёт постельного белья
 
-**v2.3.3 (M1–M14 + этап 2 + 1С + гибкие номера + i18n)**
+**v2.3.4 (M1–M14 + этап 2 + 1С + гибкие номера + i18n)**
 
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![CI](https://github.com/AlexeyVN/hotel-linen-management/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexeyVN/hotel-linen-management/actions/workflows/ci.yml)
@@ -81,7 +81,7 @@
 | Бэкап и восстановление БД: `deploy/backup.cmd`, `deploy/restore.cmd` | готово |
 | tRPC-роутеры: auth, rooms, items, operations, audit, integration, users, roles | готово |
 | Логи pino с ротацией, rate limit, ошибки домена → человеческие сообщения | готово |
-| Тесты `node --test` | 89/89 |
+| Тесты `node --test` | 100/100 |
 
 ## Быстрый старт
 
@@ -106,7 +106,7 @@ npm run dev                         # http://localhost:3000
 Проверки:
 
 ```bash
-npm test                            # node --test, 89 тестов
+npm test                            # node --test, 100 тестов
 npm run build                       # production-сборка
 ```
 
@@ -452,4 +452,4 @@ node scripts\ui-check.mjs        :: скриншоты + офлайн-сцена
 - Единая валюта `RUB/USD/EUR` без пересчёта; смена после первой операции запрещена.
 - Для чистой установки `en/USD`; текущая установка `ru/RUB`.
 - 1С блокируется при валюте не RUB.
-- Тесты 89/89, build успешен.
+- Тесты **100/100**, build успешен; i18n-аудит и runtime-матрица языков — `_audit/REPORT.md`.

@@ -594,6 +594,7 @@
                     "title":  "QR labels: {caption}",
                     "rooms":  "Rooms",
                     "noPermission":  "No permission to print labels.",
-                    "items":  "Items"
+                    "items":  "Items",
+                    "print":  "Print"
                 }
 }

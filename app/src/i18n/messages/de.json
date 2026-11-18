@@ -594,6 +594,7 @@
                     "title":  "QR-Etiketten: {caption}",
                     "rooms":  "Zimmer",
                     "noPermission":  "Keine Berechtigung zum Drucken von Etiketten.",
-                    "items":  "Artikel"
+                    "items":  "Artikel",
+                    "print":  "Drucken"
                 }
 }
