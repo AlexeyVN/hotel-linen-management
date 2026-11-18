@@ -1,21 +1,23 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { listMutations, type QueuedMutation } from "@/lib/offline/db";
 import { flushQueue, retryMutation } from "@/lib/offline/queue";
 
-const STATUS_LABELS: Record<string, string> = {
-  pending: "ждёт отправки",
-  conflict: "конфликт — нужен разбор",
-  failed: "не отправлено",
-};
-
 export function OfflineQueuePanel() {
+  const t = useTranslations("mobile");
   const [online, setOnline] = useState(true);
   const [queue, setQueue] = useState<QueuedMutation[]>([]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  const statusLabels: Record<string, string> = {
+    pending: t("queue.status.pending"),
+    conflict: t("queue.status.conflict"),
+    failed: t("queue.status.failed"),
+  };
 
   const refresh = useCallback(async () => {
     setQueue(await listMutations());
@@ -28,14 +30,18 @@ export function OfflineQueuePanel() {
       const result = await flushQueue();
       setMessage(
         result.sent > 0
-          ? `Отправлено: ${result.sent}. Конфликтов: ${result.conflicts}, ожидают повтора: ${result.retries}.`
+          ? t("queue.flushSummary", {
+              sent: result.sent,
+              conflicts: result.conflicts,
+              retries: result.retries,
+            })
           : null,
       );
     } finally {
       await refresh();
       setBusy(false);
     }
-  }, [refresh]);
+  }, [refresh, t]);
 
   useEffect(() => {
     setOnline(navigator.onLine);
@@ -70,21 +76,21 @@ export function OfflineQueuePanel() {
     <section className="rounded-xl border bg-card p-4 text-sm">
       <div className="flex items-center justify-between gap-2">
         <span className={online ? "text-green-700" : "text-amber-700"}>
-          {online ? "Сеть есть" : "Офлайн — операции копятся в очереди"}
+          {online ? t("queue.online") : t("queue.offline")}
         </span>
         {queue.length > 0 ? (
           <Button size="sm" variant="outline" onClick={flush} disabled={busy || !online}>
-            {busy ? "Отправляем…" : "Отправить сейчас"}
+            {busy ? t("queue.sending") : t("queue.sendNow")}
           </Button>
         ) : null}
       </div>
 
       {queue.length === 0 ? (
-        <p className="mt-2 text-xs text-muted-foreground">Очередь пуста.</p>
+        <p className="mt-2 text-xs text-muted-foreground">{t("queue.empty")}</p>
       ) : (
         <div className="mt-3 space-y-2">
           <p className="text-xs text-muted-foreground">
-            В очереди: {pending} · конфликтов: {conflicts} · неотправленных: {failed}
+            {t("queue.summary", { pending, conflicts, failed })}
           </p>
           <ul className="space-y-2">
             {queue.map((item) => (
@@ -92,9 +98,9 @@ export function OfflineQueuePanel() {
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-medium">{item.label}</span>
                   <span className="text-xs text-muted-foreground">
-                    {STATUS_LABELS[item.status] ?? item.status}
+                    {statusLabels[item.status] ?? item.status}
                     {item.status === "pending" && item.attempts > 0
-                      ? ` · попыток: ${item.attempts}`
+                      ? ` · ${t("queue.attempts", { attempts: item.attempts })}`
                       : ""}
                   </span>
                 </div>
@@ -117,7 +123,7 @@ export function OfflineQueuePanel() {
                       }
                     }}
                   >
-                    Повторить
+                    {t("queue.retry")}
                   </Button>
                 ) : null}
               </li>

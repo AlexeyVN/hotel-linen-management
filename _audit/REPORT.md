@@ -33,6 +33,23 @@ Runtime audit: **145 page captures** (20 admin routes + 9 mobile routes, each in
 
 All Cyrillic found on already-translated admin routes is user data (item/room/type/employee names) and must stay as entered. It is not a language-reset bug.
 
+## 2a. Post-remediation state — v2.3.5
+
+The P0/P1/P2 remediation was implemented after the baseline audit:
+
+| Metric | v2.3.3 baseline | v2.3.5 |
+|---|---|---|
+| Admin translated | 12 / 20 | **20 / 20** (reports, users, roles, 1C closed; remaining Cyrillic is user data or the intentional native label `Русский`) |
+| Mobile translated | 0 / 9 | **9 / 9** (new `mobile` namespace, 177 keys × 5 locales; remaining Cyrillic is user data) |
+| `html lang` / locale reset | 145/145, no reset | **145/145, no reset** |
+| Missing message keys | `qrPrint.print` | **none observed** |
+| Tests | 89 | **100/100** |
+| Excel headers/signature | Russian/₽ | locale + currency aware; language-specific headers and signature verified in a real `.xlsx` export |
+| Navbar group state | reset on locale switch | fixed with stable group IDs |
+| Server errors | Russian raw | **still raw Russian; error-code mapping remains P2** |
+
+Runtime evidence: `_audit/runtime-i18n-v235.jsonl` (145 captures). On English admin routes, remaining Cyrillic is limited to user data; on mobile routes it is limited to room/item/employee/checklist names. No crash or console error was observed in the post-remediation run; `/admin/qr/print` was rechecked after the key fix with `ERRORS=[]`.
+
 ## 3. Admin/server
 
 Detailed route table: `_audit/admin-i18n.md`.

@@ -3,11 +3,14 @@
  * Строки собираются чистыми функциями, книга — ExcelJS.
  */
 import ExcelJS from "exceljs";
+import { getReportLabels, type ReportLabels } from "@/i18n/report-labels";
 import {
   CLEANING_TYPE_LABELS,
   PRIORITY_LABELS,
   TASK_STATUS_LABELS,
 } from "@/lib/domain/cleaning";
+
+const DEFAULT_LABELS = getReportLabels("ru");
 
 const TYPE_LABELS: Record<string, string> = {
   RECEIVE: "Приёмка",
@@ -17,13 +20,52 @@ const TYPE_LABELS: Record<string, string> = {
   AUDIT: "Инвентаризация",
 };
 
+function operationTypeLabel(type: string, labels: ReportLabels): string {
+  switch (type) {
+    case "RECEIVE": return labels.typeReceive;
+    case "DISTRIBUTE": return labels.typeDistribute;
+    case "RETURN": return labels.typeReturn;
+    case "WRITE_OFF": return labels.typeWriteoff;
+    case "AUDIT": return labels.typeAudit;
+    default: return type;
+  }
+}
+
+function cleaningTypeLabel(type: string, labels: ReportLabels): string {
+  switch (type) {
+    case "DAILY": return labels.cleaningDaily;
+    case "ON_DEMAND": return labels.cleaningOnDemand;
+    case "GENERAL": return labels.cleaningGeneral;
+    default: return type;
+  }
+}
+
+function priorityLabel(priority: string, labels: ReportLabels): string {
+  switch (priority) {
+    case "LOW": return labels.priorityLow;
+    case "URGENT": return labels.priorityUrgent;
+    case "MEDIUM": return labels.priorityMedium;
+    default: return priority;
+  }
+}
+
+function taskStatusLabel(status: string, labels: ReportLabels): string {
+  switch (status) {
+    case "NEW": return labels.taskNew;
+    case "IN_PROGRESS": return labels.taskInProgress;
+    case "DONE": return labels.taskDone;
+    case "CANCELLED": return labels.taskCancelled;
+    default: return status;
+  }
+}
+
 function rubles(kopecks: number): number {
   return kopecks / 100;
 }
 
-function shortDate(value: Date | null | undefined): string {
+function shortDate(value: Date | null | undefined, locale = "ru"): string {
   if (!value) return "";
-  return new Intl.DateTimeFormat("ru-RU", { dateStyle: "short" }).format(value);
+  return new Intl.DateTimeFormat(locale, { dateStyle: "short" }).format(value);
 }
 
 export interface StockRowInput {
@@ -82,32 +124,34 @@ export interface MaidTaskRowInput {
 
 export function maidTaskRows(
   tasks: readonly MaidTaskRowInput[],
+  labels: ReportLabels = DEFAULT_LABELS,
+  locale = "ru",
 ): Array<Array<string | number>> {
   return tasks.map((task) => [
-    new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" }).format(
+    new Intl.DateTimeFormat(locale, { dateStyle: "short", timeStyle: "short" }).format(
       task.createdAt,
     ),
     task.maidName,
     task.roomNumber,
-    CLEANING_TYPE_LABELS[task.type] ?? task.type,
-    PRIORITY_LABELS[task.priority] ?? task.priority,
-    TASK_STATUS_LABELS[task.status] ?? task.status,
+    cleaningTypeLabel(task.type, labels),
+    priorityLabel(task.priority, labels),
+    taskStatusLabel(task.status, labels),
     task.plannedMinutes ?? "",
     task.durationMinutes ?? "",
     task.startedAt
-      ? new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" }).format(
+      ? new Intl.DateTimeFormat(locale, { dateStyle: "short", timeStyle: "short" }).format(
           task.startedAt,
         )
       : "",
     task.finishedAt
-      ? new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" }).format(
+      ? new Intl.DateTimeFormat(locale, { dateStyle: "short", timeStyle: "short" }).format(
           task.finishedAt,
         )
       : "",
   ]);
 }
 
-export function stockRows(items: readonly StockRowInput[]): Array<Array<string | number>> {
+export function stockRows(items: readonly StockRowInput[], locale = "ru"): Array<Array<string | number>> {
   return items.map((item) => [
     item.name,
     item.categoryName,
@@ -115,20 +159,22 @@ export function stockRows(items: readonly StockRowInput[]): Array<Array<string |
     item.qty,
     rubles(item.priceKopecks),
     rubles(item.qty * item.priceKopecks),
-    shortDate(item.lastReceiptAt),
+    shortDate(item.lastReceiptAt, locale),
   ]);
 }
 
 export function movementsRows(
   operations: readonly MovementRowInput[],
+  labels: ReportLabels = DEFAULT_LABELS,
+  locale = "ru",
 ): Array<Array<string | number>> {
   const rows: Array<Array<string | number>> = [];
   for (const operation of operations) {
     for (const line of operation.items) {
       rows.push([
-        shortDate(operation.documentDate),
-        TYPE_LABELS[operation.type] ?? operation.type,
-        operation.roomNumber ?? "склад",
+        shortDate(operation.documentDate, locale),
+        operationTypeLabel(operation.type, labels),
+        operation.roomNumber ?? labels.warehouse,
         line.name,
         line.qty,
         rubles(line.priceKopecks),
@@ -172,15 +218,17 @@ export interface CleaningTaskRowInput {
 
 export function taskRows(
   tasks: readonly CleaningTaskRowInput[],
+  labels: ReportLabels = DEFAULT_LABELS,
+  locale = "ru",
 ): Array<Array<string | number>> {
   return tasks.map((task) => [
-    new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" }).format(
+    new Intl.DateTimeFormat(locale, { dateStyle: "short", timeStyle: "short" }).format(
       task.createdAt,
     ),
     task.roomNumber,
-    CLEANING_TYPE_LABELS[task.type] ?? task.type,
-    PRIORITY_LABELS[task.priority] ?? task.priority,
-    TASK_STATUS_LABELS[task.status] ?? task.status,
+    cleaningTypeLabel(task.type, labels),
+    priorityLabel(task.priority, labels),
+    taskStatusLabel(task.status, labels),
     task.assigneeName ?? "—",
     task.plannedMinutes ?? "",
     task.durationMinutes ?? "",
@@ -198,6 +246,7 @@ export interface ReportBranding {
   logo?: { buffer: Buffer; width: number; height: number };
   locale?: string;
   currency?: string;
+  labels?: ReportLabels;
 }
 
 function columnLetter(column: number): string {
@@ -232,9 +281,10 @@ export async function buildWorkbook(
   const sheet = workbook.addWorksheet(sheetName);
   const lastCol = Math.max(headers.length, 1);
   let headerRowNumber = 1;
+  const L = branding?.labels ?? DEFAULT_LABELS;
 
   if (branding) {
-    const hotelName = branding.hotelName || "Отель";
+    const hotelName = branding.hotelName || "Hotel";
     const logo = branding.logo;
     sheet.getRow(1).height = logo ? 52 : 30;
     if (logo) {
@@ -266,12 +316,12 @@ export async function buildWorkbook(
       sheet.getCell(3, 1).font = { italic: true, size: 11 };
     }
 
-    const generated = new Intl.DateTimeFormat(branding.locale ?? "ru-RU", {
+    const generated = new Intl.DateTimeFormat(branding.locale ?? "ru", {
       dateStyle: "short",
       timeStyle: "short",
     }).format(branding.generatedAt);
     if (lastCol > 1) sheet.mergeCells(4, 1, 4, lastCol);
-    sheet.getCell(4, 1).value = `Дата формирования: ${generated}    Составил: ${branding.preparedBy}`;
+    sheet.getCell(4, 1).value = `${L.generatedAt}: ${generated}    ${L.preparedBy}: ${branding.preparedBy}`;
     sheet.getCell(4, 1).font = { size: 10 };
     sheet.getRow(5).height = 6;
     headerRowNumber = 6;
@@ -308,15 +358,15 @@ export async function buildWorkbook(
       cell.value = value;
       if (bold) cell.font = { bold: true };
     };
-    put(signatureRow, 1, "Составил:", true);
+    put(signatureRow, 1, `${L.preparedBy}:`, true);
     put(signatureRow, 2, branding.preparedBy);
-    put(signatureRow + 1, 1, "Ответственный:", true);
+    put(signatureRow + 1, 1, `${L.responsible}:`, true);
     put(signatureRow + 1, 2, branding.responsibleName || "________________");
-    put(signatureRow + 2, 1, "Должность:", true);
+    put(signatureRow + 2, 1, `${L.position}:`, true);
     put(signatureRow + 2, 2, branding.responsiblePosition || "________________");
-    put(signatureRow + 3, 1, "Подпись:", true);
+    put(signatureRow + 3, 1, `${L.signature}:`, true);
     put(signatureRow + 3, 2, "________________");
-    put(signatureRow + 3, 3, "Дата:", true);
+    put(signatureRow + 3, 3, `${L.date}:`, true);
     put(signatureRow + 3, 4, "«___» __________ 20___ г.");
 
     const lastRow = signatureRow + 3;
@@ -331,7 +381,7 @@ export async function buildWorkbook(
       printArea: `A1:${columnLetter(lastCol)}${lastRow}`,
       printTitlesRow: `${headerRowNumber}:${headerRowNumber}`,
     };
-    sheet.headerFooter.oddFooter = "&CСтр. &P из &N";
+    sheet.headerFooter.oddFooter = `&C${L.page} &P / &N`;
   }
 
   const buffer = await workbook.xlsx.writeBuffer();

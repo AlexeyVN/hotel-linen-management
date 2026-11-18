@@ -1,17 +1,12 @@
 import type { NextRequest } from "next/server";
 import { getConfiguredLocale, getConfiguredCurrency } from "@/i18n/get-locale";
+import { getReportLabels } from "@/i18n/report-labels";
 import { computeLowStock } from "@/lib/domain/reports";
 import { getCurrentUser } from "@/lib/auth";
 import { getExcelBranding } from "@/lib/branding";
 import { prisma } from "@/lib/prisma";
 import { hasPermission } from "@/lib/rbac";
 import {
-  LOW_STOCK_HEADERS,
-  MAID_TASK_HEADERS,
-  MOVEMENTS_HEADERS,
-  NO_PRICE_HEADERS,
-  STOCK_HEADERS,
-  TASK_HEADERS,
   buildWorkbook,
   lowStockRows,
   maidTaskRows,
@@ -45,12 +40,13 @@ export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const report = url.searchParams.get("report") ?? "stock";
   const [locale, currency] = await Promise.all([getConfiguredLocale(), getConfiguredCurrency()]);
+  const labels = getReportLabels(locale);
   const currencySymbol = currency === "USD" ? "$" : currency === "EUR" ? "€" : "₽";
   const headersWithCurrency = (headers: string[]) =>
     headers.map((header) => header.replace("₽", currencySymbol));
-  const STOCK_HEADERS_I18N = headersWithCurrency(STOCK_HEADERS);
-  const MOVEMENTS_HEADERS_I18N = headersWithCurrency(MOVEMENTS_HEADERS);
-  const LOW_STOCK_HEADERS_I18N = headersWithCurrency(LOW_STOCK_HEADERS);
+  const STOCK_HEADERS_I18N = headersWithCurrency(labels.stockHeaders);
+  const MOVEMENTS_HEADERS_I18N = headersWithCurrency(labels.movementsHeaders);
+  const LOW_STOCK_HEADERS_I18N = headersWithCurrency(labels.lowStockHeaders);
   const excelBranding = await getExcelBranding(user.fullName);
   const brandingFor = (reportTitle: string, subtitle?: string) => ({
     ...excelBranding,
@@ -59,6 +55,7 @@ export async function GET(request: NextRequest) {
     generatedAt: new Date(),
     locale,
     currency,
+    labels,
   });
 
   let buffer: Buffer;
@@ -77,7 +74,7 @@ export async function GET(request: NextRequest) {
       take: 5000,
     });
     buffer = await buildWorkbook(
-      "Движения",
+      labels.reportMovements,
       MOVEMENTS_HEADERS_I18N,
       movementsRows(
         operations.map((operation) => ({
@@ -94,10 +91,12 @@ export async function GET(request: NextRequest) {
             priceKopecks: line.item.priceKopecks,
           })),
         })),
+        labels,
+        locale,
       ),
       brandingFor(
-        "Движения",
-        `Период: ${url.searchParams.get("from") ?? "—"} — ${url.searchParams.get("to") ?? "—"}`,
+        labels.reportMovements,
+        `${labels.reportMovements}: ${url.searchParams.get("from") ?? "—"} — ${url.searchParams.get("to") ?? "—"}`,
       ),
     );
     filename = `movements-${url.searchParams.get("from") ?? ""}-${url.searchParams.get("to") ?? ""}.xlsx`;
@@ -134,7 +133,7 @@ export async function GET(request: NextRequest) {
     );
     const price = new Map(rules.map((rule) => [rule.itemId, rule.item.priceKopecks]));
     buffer = await buildWorkbook(
-      "Дефицит",
+      labels.reportLowStock,
       LOW_STOCK_HEADERS_I18N,
       lowStockRows(
         issues.map((issue) => ({
@@ -142,7 +141,7 @@ export async function GET(request: NextRequest) {
           priceKopecks: price.get(issue.itemId) ?? 0,
         })),
       ),
-      brandingFor("Дефицит по минимальным остаткам"),
+      brandingFor(labels.reportLowStock),
     );
     filename = "low-stock.xlsx";
   } else if (report === "maid-tasks") {
@@ -163,12 +162,12 @@ export async function GET(request: NextRequest) {
       take: 5000,
     });
     buffer = await buildWorkbook(
-      "Горничные",
-      MAID_TASK_HEADERS,
+      labels.reportMaidTasks,
+      labels.maidTaskHeaders,
       maidTaskRows(
         tasks.map((task) => ({
           createdAt: task.createdAt,
-          maidName: task.assignee?.fullName ?? "Не назначено",
+          maidName: task.assignee?.fullName ?? "—",
           roomNumber: task.room.number,
           type: task.type,
           priority: task.priority,
@@ -184,10 +183,12 @@ export async function GET(request: NextRequest) {
           startedAt: task.startedAt,
           finishedAt: task.finishedAt,
         })),
+        labels,
+        locale,
       ),
       brandingFor(
-        "Задания горничных",
-        `Период: ${url.searchParams.get("from") ?? "—"} — ${url.searchParams.get("to") ?? "—"}`,
+        labels.reportMaidTasks,
+        `${labels.reportMaidTasks}: ${url.searchParams.get("from") ?? "—"} — ${url.searchParams.get("to") ?? "—"}`,
       ),
     );
     filename = "maid-tasks.xlsx";
@@ -203,8 +204,8 @@ export async function GET(request: NextRequest) {
       take: 5000,
     });
     buffer = await buildWorkbook(
-      "Уборка",
-      TASK_HEADERS,
+      labels.reportTasks,
+      labels.taskHeaders,
       taskRows(
         tasks.map((task) => ({
           createdAt: task.createdAt,
@@ -224,10 +225,12 @@ export async function GET(request: NextRequest) {
                 )
               : null,
         })),
+        labels,
+        locale,
       ),
       brandingFor(
         "Задания на уборку",
-        `Период: ${url.searchParams.get("from") ?? "—"} — ${url.searchParams.get("to") ?? "—"}`,
+        `${labels.reportMovements}: ${url.searchParams.get("from") ?? "—"} — ${url.searchParams.get("to") ?? "—"}`,
       ),
     );
     filename = "cleaning-tasks.xlsx";
@@ -238,8 +241,8 @@ export async function GET(request: NextRequest) {
       orderBy: [{ name: "asc" }],
     });
     buffer = await buildWorkbook(
-      "Без цены",
-      NO_PRICE_HEADERS,
+      labels.reportNoPrice,
+      labels.noPriceHeaders,
       noPriceRows(
         items.map((item) => ({
           name: item.name,
@@ -248,7 +251,7 @@ export async function GET(request: NextRequest) {
           qty: item.warehouse?.qty ?? 0,
         })),
       ),
-      brandingFor("Позиции без цены"),
+      brandingFor(labels.reportNoPrice),
     );
     filename = "no-price.xlsx";
   } else {
@@ -258,7 +261,7 @@ export async function GET(request: NextRequest) {
       orderBy: [{ name: "asc" }],
     });
     buffer = await buildWorkbook(
-      "Остатки",
+      labels.reportStock,
       STOCK_HEADERS_I18N,
       stockRows(
         items.map((item) => ({
@@ -269,8 +272,9 @@ export async function GET(request: NextRequest) {
           priceKopecks: item.priceKopecks,
           lastReceiptAt: item.warehouse?.lastReceiptAt ?? null,
         })),
+        locale,
       ),
-      brandingFor("Остатки склада"),
+      brandingFor(labels.reportStock),
     );
     filename = "warehouse-stock.xlsx";
   }

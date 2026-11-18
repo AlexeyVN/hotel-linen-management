@@ -1,16 +1,20 @@
 "use client";
 
 import { TRPCClientError } from "@trpc/client";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PERMISSION_LABELS } from "@/lib/permission-labels";
+
 import type { PermissionCode } from "@/lib/rbac";
 import { trpc } from "@/lib/trpc-client";
 
 const ROLE_ORDER: Record<string, number> = { ADMIN: 0, MANAGER: 1, MAID: 2 };
 
 export function RolesAdmin() {
+  const t = useTranslations("rolesAdmin");
+  const tRoles = useTranslations("roles");
+  const tPerm = useTranslations("permissionsUi");
   const utils = trpc.useUtils();
   const rolesQuery = trpc.roles.list.useQuery();
   const permissionsQuery = trpc.auth.permissions.useQuery();
@@ -33,14 +37,14 @@ export function RolesAdmin() {
         roleId,
         permissionCodes: codes as PermissionCode[],
       });
-      setNotice("Права сохранены");
+      setNotice(t("saved"));
       await utils.roles.list.invalidate();
       await utils.auth.me.invalidate();
     } catch (mutationError) {
       setError(
         mutationError instanceof TRPCClientError
           ? mutationError.message
-          : "Не удалось сохранить права",
+          : t("saveError"),
       );
     }
   }
@@ -48,11 +52,8 @@ export function RolesAdmin() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold">Роли и права</h1>
-        <p className="text-sm text-muted-foreground">
-          Права проверяются на сервере при каждом запросе. У администратора нельзя
-          снять управление пользователями и ролями — защита от самоблокировки.
-        </p>
+        <h1 className="text-2xl font-semibold">{t("title")}</h1>
+        <p className="text-sm text-muted-foreground">{t("intro")}</p>
       </header>
 
       {error ? (
@@ -69,7 +70,7 @@ export function RolesAdmin() {
             <Card key={role.id} data-role-code={role.code}>
               <CardHeader>
                 <CardTitle>
-                  {role.name} <span className="text-xs text-muted-foreground">({role.code})</span>
+                  {tRoles(role.code as "ADMIN" | "MANAGER" | "MAID")} <span className="text-xs text-muted-foreground">({role.code})</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -89,12 +90,12 @@ export function RolesAdmin() {
                           setDraft({ ...draft, [role.code]: next });
                         }}
                       />
-                      <span>{PERMISSION_LABELS[code] ?? code}</span>
+                      <span>{tPerm(code.replaceAll(".", "_") as never)}</span>
                     </label>
                   );
                 })}
                 <Button className="mt-2" onClick={() => save(role.id, selected)}>
-                  Сохранить «{role.name}»
+                  {t("save", { role: tRoles(role.code as "ADMIN" | "MANAGER" | "MAID") })}
                 </Button>
               </CardContent>
             </Card>

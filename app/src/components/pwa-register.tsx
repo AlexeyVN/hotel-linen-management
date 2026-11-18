@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button";
  * В небезопасном контексте (http://LAN-IP) SW не регистрируется — так и должно быть.
  */
 export function PwaRegister() {
+  const t = useTranslations("mobile");
   const [waiting, setWaiting] = useState<ServiceWorker | null>(null);
 
   useEffect(() => {
@@ -43,13 +45,13 @@ export function PwaRegister() {
 
   return (
     <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-between gap-3 bg-primary px-4 py-2 text-sm text-primary-foreground">
-      <span>Доступно обновление приложения</span>
+      <span>{t("pwa.updateAvailable")}</span>
       <Button
         size="sm"
         variant="outline"
         onClick={() => waiting.postMessage("SKIP_WAITING")}
       >
-        Обновить
+        {t("pwa.update")}
       </Button>
     </div>
   );

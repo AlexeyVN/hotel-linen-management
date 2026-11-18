@@ -1,18 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { OfflineQueuePanel } from "@/components/offline-queue-panel";
 import { trpc } from "@/lib/trpc-client";
 
-const QUICK_ACTIONS = [
-  { href: "/m/audit", title: "Инвентаризация", subtitle: "Сверить остатки номера" },
-  { href: "/m/distribute", title: "Раздача", subtitle: "Бельё и химия со склада" },
-  { href: "/m/scan", title: "Сканировать QR", subtitle: "Открыть номер по метке" },
-];
-
 export function MobileDashboard({ fullName }: { fullName: string }) {
+  const t = useTranslations("mobile");
+  const locale = useLocale();
   const utils = trpc.useUtils();
   const dashboardQuery = trpc.cleaning.dashboard.useQuery();
   const shiftQuery = trpc.cleaning.shiftStatus.useQuery();
@@ -22,6 +19,16 @@ export function MobileDashboard({ fullName }: { fullName: string }) {
   const [online, setOnline] = useState(true);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+
+  const quickActions = [
+    { href: "/m/audit", title: t("actions.audit"), subtitle: t("actions.auditSubtitle") },
+    {
+      href: "/m/distribute",
+      title: t("actions.distribute"),
+      subtitle: t("actions.distributeSubtitle"),
+    },
+    { href: "/m/scan", title: t("actions.scan"), subtitle: t("actions.scanSubtitle") },
+  ];
 
   useEffect(() => {
     setOnline(navigator.onLine);
@@ -39,7 +46,7 @@ export function MobileDashboard({ fullName }: { fullName: string }) {
   const shift = shiftQuery.data;
 
   const shiftStart = shift?.startedAt
-    ? new Intl.DateTimeFormat("ru-RU", { timeStyle: "short" }).format(new Date(shift.startedAt))
+    ? new Intl.DateTimeFormat(locale, { timeStyle: "short" }).format(new Date(shift.startedAt))
     : null;
 
   async function toggleShift() {
@@ -48,10 +55,10 @@ export function MobileDashboard({ fullName }: { fullName: string }) {
     try {
       if (shift?.active) {
         await endShift.mutateAsync();
-        setNotice("Смена завершена");
+        setNotice(t("dashboard.shiftEnded"));
       } else {
         await startShift.mutateAsync();
-        setNotice("Смена начата");
+        setNotice(t("dashboard.shiftStarted"));
       }
       await Promise.all([
         utils.cleaning.shiftStatus.invalidate(),
@@ -64,20 +71,28 @@ export function MobileDashboard({ fullName }: { fullName: string }) {
   }
 
   const statCards = [
-    { label: "Мои задачи", value: stats ? stats.tasks.new + stats.tasks.inProgress : 0, tone: "" },
-    { label: "В работе", value: stats?.tasks.inProgress ?? 0, tone: "text-amber-700" },
-    { label: "Выполнено", value: stats?.tasks.done ?? 0, tone: "text-green-700" },
-    { label: "Грязные", value: stats?.rooms.dirty ?? 0, tone: "text-red-700" },
-    { label: "Чистые", value: stats?.rooms.clean ?? 0, tone: "text-green-700" },
-    { label: "Проверено", value: stats?.rooms.inspected ?? 0, tone: "text-primary" },
-    { label: "В ремонте", value: stats?.rooms.outOfOrder ?? 0, tone: "text-muted-foreground" },
+    {
+      label: t("dashboard.stats.myTasks"),
+      value: stats ? stats.tasks.new + stats.tasks.inProgress : 0,
+      tone: "",
+    },
+    { label: t("dashboard.stats.inProgress"), value: stats?.tasks.inProgress ?? 0, tone: "text-amber-700" },
+    { label: t("dashboard.stats.done"), value: stats?.tasks.done ?? 0, tone: "text-green-700" },
+    { label: t("dashboard.stats.dirty"), value: stats?.rooms.dirty ?? 0, tone: "text-red-700" },
+    { label: t("dashboard.stats.clean"), value: stats?.rooms.clean ?? 0, tone: "text-green-700" },
+    { label: t("dashboard.stats.inspected"), value: stats?.rooms.inspected ?? 0, tone: "text-primary" },
+    {
+      label: t("dashboard.stats.outOfOrder"),
+      value: stats?.rooms.outOfOrder ?? 0,
+      tone: "text-muted-foreground",
+    },
   ];
 
   return (
     <div className="mx-auto max-w-md space-y-4 p-4">
       <header className="flex items-start justify-between gap-2">
         <div>
-          <h1 className="text-xl font-semibold">Здравствуйте!</h1>
+          <h1 className="text-xl font-semibold">{t("dashboard.greeting")}</h1>
           <p className="text-sm text-muted-foreground">{fullName}</p>
         </div>
         <span
@@ -87,16 +102,20 @@ export function MobileDashboard({ fullName }: { fullName: string }) {
               : "rounded-full bg-amber-50 px-2 py-1 text-xs font-medium text-amber-800"
           }
         >
-          {online ? "онлайн" : "офлайн"}
+          {online ? t("online.online") : t("online.offline")}
         </span>
       </header>
 
       <section className="rounded-xl border bg-card p-4">
         <div className="flex items-center justify-between gap-2">
           <div>
-            <p className="text-sm font-medium">{shift?.active ? "Смена идёт" : "Смена не начата"}</p>
+            <p className="text-sm font-medium">
+              {shift?.active ? t("dashboard.shiftActive") : t("dashboard.shiftInactive")}
+            </p>
             <p className="text-xs text-muted-foreground">
-              {shift?.active && shiftStart ? `с ${shiftStart}` : "Начните день, чтобы видеть задачи"}
+              {shift?.active && shiftStart
+                ? t("dashboard.shiftSince", { time: shiftStart })
+                : t("dashboard.shiftStartHint")}
             </p>
           </div>
           <Button
@@ -105,7 +124,7 @@ export function MobileDashboard({ fullName }: { fullName: string }) {
             disabled={busy}
             onClick={toggleShift}
           >
-            {shift?.active ? "Завершить" : "Начать смену"}
+            {shift?.active ? t("dashboard.shiftEnd") : t("dashboard.shiftStart")}
           </Button>
         </div>
         {notice ? <p className="mt-2 text-xs text-green-700">{notice}</p> : null}
@@ -125,9 +144,9 @@ export function MobileDashboard({ fullName }: { fullName: string }) {
         className="flex items-center justify-between rounded-xl border bg-card p-5 shadow-sm active:bg-muted"
       >
         <span>
-          <span className="block text-lg font-semibold">Мои уборки</span>
+          <span className="block text-lg font-semibold">{t("dashboard.myTasksTitle")}</span>
           <span className="mt-1 block text-sm text-muted-foreground">
-            Активные задачи по приоритету
+            {t("dashboard.myTasksSubtitle")}
           </span>
         </span>
         <span aria-hidden className="text-2xl text-muted-foreground">
@@ -140,9 +159,9 @@ export function MobileDashboard({ fullName }: { fullName: string }) {
         className="flex items-center justify-between rounded-xl border bg-card p-5 shadow-sm active:bg-muted"
       >
         <span>
-          <span className="block text-lg font-semibold">Мои номера</span>
+          <span className="block text-lg font-semibold">{t("dashboard.myRoomsTitle")}</span>
           <span className="mt-1 block text-sm text-muted-foreground">
-            Статусы: грязно · убрано · проверено
+            {t("dashboard.myRoomsSubtitle")}
           </span>
         </span>
         <span aria-hidden className="text-2xl text-muted-foreground">
@@ -153,8 +172,8 @@ export function MobileDashboard({ fullName }: { fullName: string }) {
       <OfflineQueuePanel />
 
       <section className="space-y-2">
-        <h2 className="text-sm font-medium text-muted-foreground">Действия</h2>
-        {QUICK_ACTIONS.map((action) => (
+        <h2 className="text-sm font-medium text-muted-foreground">{t("dashboard.actionsTitle")}</h2>
+        {quickActions.map((action) => (
           <Link
             key={action.href}
             href={action.href}

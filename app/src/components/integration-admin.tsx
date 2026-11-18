@@ -1,7 +1,7 @@
 "use client";
 
 import { TRPCClientError } from "@trpc/client";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +28,9 @@ interface Status {
 
 export function IntegrationAdmin() {
   const utils = trpc.useUtils();
+  const t = useTranslations("integration");
   const tSettings = useTranslations("settings");
+  const locale = useLocale();
   const statusQuery = trpc.integration.status.useQuery();
   const uiSettingsQuery = trpc.settings.get.useQuery();
   const currency = uiSettingsQuery.data?.currency;
@@ -101,11 +103,8 @@ export function IntegrationAdmin() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold">Настройки 1С</h1>
-        <p className="text-sm text-muted-foreground">
-          Подключение, синхронизация номенклатуры, очередь операций. Интеграция
-          выключается полностью — учёт продолжает работать локально.
-        </p>
+        <h1 className="text-2xl font-semibold">{t("title")}</h1>
+        <p className="text-sm text-muted-foreground">{t("intro")}</p>
       </header>
 
       {error ? (
@@ -122,10 +121,10 @@ export function IntegrationAdmin() {
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[
-          { title: "Статус", value: status ? (status.enabled ? "включена" : "выключена") : "…" },
-          { title: "Режим", value: status?.mode === "onec" ? "1С (HTTP)" : "заглушка" },
-          { title: "В очереди", value: status?.outbox.pending ?? 0 },
-          { title: "Отправлено / ошибок", value: `${status?.outbox.sent ?? 0} / ${status?.outbox.failed ?? 0}` },
+          { title: t("status"), value: status ? (status.enabled ? t("enabled") : t("disabled")) : "…" },
+          { title: t("mode"), value: status?.mode === "onec" ? t("onec") : t("stub") },
+          { title: t("queued"), value: status?.outbox.pending ?? 0 },
+          { title: t("sentFailed"), value: `${status?.outbox.sent ?? 0} / ${status?.outbox.failed ?? 0}` },
         ].map((card) => (
           <Card key={card.title}>
             <CardHeader className="pb-2">
@@ -142,7 +141,7 @@ export function IntegrationAdmin() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Подключение</CardTitle>
+          <CardTitle>{t("connection")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <label className="flex items-center gap-2 text-sm">
@@ -151,12 +150,12 @@ export function IntegrationAdmin() {
               checked={form.enabled}
               onChange={(event) => setForm({ ...form, enabled: event.target.checked })}
             />
-            Интеграция включена
+            {t("integrationEnabled")}
           </label>
 
           <div className="flex flex-wrap gap-3">
             <label className="text-sm">
-              <span className="mb-1 block text-muted-foreground">Режим</span>
+              <span className="mb-1 block text-muted-foreground">{t("modeLabel")}</span>
               <select
                 value={form.mode}
                 onChange={(event) =>
@@ -164,13 +163,13 @@ export function IntegrationAdmin() {
                 }
                 className="h-10 rounded-md border bg-background px-3"
               >
-                <option value="stub">Заглушка (проверка канала)</option>
-                <option value="onec">1С Отель — HTTP-сервис</option>
+                <option value="stub">{t("stubOption")}</option>
+                <option value="onec">{t("onecOption")}</option>
               </select>
             </label>
 
             <label className="min-w-64 flex-1 text-sm">
-              <span className="mb-1 block text-muted-foreground">URL HTTP-сервиса 1С</span>
+              <span className="mb-1 block text-muted-foreground">{t("baseUrl")}</span>
               <Input
                 value={form.baseUrl}
                 placeholder="http://server-1c:8080/hotel"
@@ -179,7 +178,7 @@ export function IntegrationAdmin() {
             </label>
 
             <label className="text-sm">
-              <span className="mb-1 block text-muted-foreground">Интервал, мин</span>
+              <span className="mb-1 block text-muted-foreground">{t("interval")}</span>
               <Input
                 type="number"
                 min={1}
@@ -195,7 +194,7 @@ export function IntegrationAdmin() {
 
           <div className="flex flex-wrap gap-3">
             <label className="text-sm">
-              <span className="mb-1 block text-muted-foreground">Логин 1С</span>
+              <span className="mb-1 block text-muted-foreground">{t("login")}</span>
               <Input
                 value={form.login}
                 onChange={(event) => setForm({ ...form, login: event.target.value })}
@@ -203,7 +202,7 @@ export function IntegrationAdmin() {
             </label>
             <label className="text-sm">
               <span className="mb-1 block text-muted-foreground">
-                Пароль {status?.passwordSet ? "(задан — оставьте пустым, чтобы не менять)" : ""}
+                {t("password")} {status?.passwordSet ? t("passwordSet") : ""}
               </span>
               <Input
                 type="password"
@@ -228,11 +227,11 @@ export function IntegrationAdmin() {
                       password: form.password === "" ? undefined : form.password,
                       syncIntervalMinutes: form.syncIntervalMinutes,
                     }),
-                  "Настройки сохранены",
+                  t("saved"),
                 )
               }
             >
-              Сохранить
+              {t("save")}
             </Button>
             <Button
               variant="outline"
@@ -243,7 +242,7 @@ export function IntegrationAdmin() {
                 setNotice(null);
                 try {
                   const result = await ping.mutateAsync();
-                  setNotice(result.details ?? (result.ok ? "Соединение есть" : "Нет соединения"));
+                  setNotice(result.details ?? (result.ok ? t("connected") : t("noConnection")));
                 } catch (pingError) {
                   setError(errorText(pingError));
                 } finally {
@@ -251,7 +250,7 @@ export function IntegrationAdmin() {
                 }
               }}
             >
-              Проверить соединение
+              {t("checkConnection")}
             </Button>
             <Button
               variant="outline"
@@ -260,12 +259,12 @@ export function IntegrationAdmin() {
                 run(async () => {
                   const result = await syncItemsNow.mutateAsync();
                   setNotice(
-                    `Номенклатура: создано ${result.created}, обновлено ${result.updated}, всего ${result.total}`,
+                    t("itemsLoaded", { created: result.created, updated: result.updated, total: result.total }),
                   );
                 }, "")
               }
             >
-              Загрузить номенклатуру
+              {t("loadItems")}
             </Button>
             <Button
               variant="outline"
@@ -274,23 +273,23 @@ export function IntegrationAdmin() {
                 run(async () => {
                   const result = await pushNow.mutateAsync();
                   setNotice(
-                    `Очередь: отправлено ${result.sent}, повтор ${result.pending}, ошибок ${result.failed}`,
+                    t("queuePushed", { sent: result.sent, pending: result.pending, failed: result.failed }),
                   );
                 }, "" )}
             >
-              Отправить очередь
+              {t("pushQueue")}
             </Button>
           </div>
 
           <dl className="grid gap-1 text-sm">
             <div className="flex gap-2">
-              <dt className="text-muted-foreground">Последняя синхронизация:</dt>
-              <dd>{status?.lastSyncAt ? new Date(status.lastSyncAt).toLocaleString("ru-RU") : "нет"}</dd>
+              <dt className="text-muted-foreground">{t("lastSync")}</dt>
+              <dd>{status?.lastSyncAt ? new Date(status.lastSyncAt).toLocaleString(locale) : t("none")}</dd>
             </div>
             <div className="flex gap-2">
-              <dt className="text-muted-foreground">Последняя ошибка:</dt>
+              <dt className="text-muted-foreground">{t("lastError")}</dt>
               <dd className={status?.lastError ? "text-destructive" : ""}>
-                {status?.lastError || "нет"}
+                {status?.lastError || t("none")}
               </dd>
             </div>
           </dl>
@@ -299,14 +298,10 @@ export function IntegrationAdmin() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Статусы номеров (1С ↔ система)</CardTitle>
+          <CardTitle>{t("roomStatuses")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Входящий webhook обновляет статус номера без создания задачи. Изменения из
-            приложения (уборка, ручной статус) уходят в 1С через очередь с повторами.
-            Точный контракт 1С подтверждается на конкретном релизе.
-          </p>
+          <p className="text-sm text-muted-foreground">{t("roomStatusIntro")}</p>
 
           <label className="flex items-center gap-2 text-sm">
             <input
@@ -314,18 +309,18 @@ export function IntegrationAdmin() {
               checked={roomForm.enabled}
               onChange={(event) => setRoomForm({ ...roomForm, enabled: event.target.checked })}
             />
-            Обмен статусами включён
+            {t("statusExchangeEnabled")}
           </label>
 
           <div className="grid gap-3 lg:grid-cols-2">
             <label className="text-sm lg:col-span-2">
               <span className="mb-1 block text-muted-foreground">
-                URL для webhook в 1С (передайте внедренцу)
+                {t("webhookUrl")}
               </span>
               <Input value={roomStatus?.webhookUrl ?? ""} readOnly className="font-mono text-xs" />
             </label>
             <label className="text-sm">
-              <span className="mb-1 block text-muted-foreground">Путь SetRoomStatus</span>
+              <span className="mb-1 block text-muted-foreground">{t("setRoomStatusPath")}</span>
               <Input
                 value={roomForm.path}
                 onChange={(event) => setRoomForm({ ...roomForm, path: event.target.value })}
@@ -333,7 +328,7 @@ export function IntegrationAdmin() {
               />
             </label>
             <label className="text-sm">
-              <span className="mb-1 block text-muted-foreground">Метод</span>
+              <span className="mb-1 block text-muted-foreground">{t("method")}</span>
               <select
                 value={roomForm.method}
                 onChange={(event) =>
@@ -350,11 +345,10 @@ export function IntegrationAdmin() {
           <div className="rounded-md border bg-muted/20 p-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p className="text-sm font-medium">Webhook-токен</p>
+                <p className="text-sm font-medium">{t("webhookToken")}</p>
                 <p className="text-xs text-muted-foreground">
                   {roomStatus?.tokenSet
-                    ? "Токен задан. Новый токен заменит старый."
-                    : "Токен не задан — webhook отвечает 503."}
+                    ? t("tokenSetHint") : t("tokenNotSetHint")}
                 </p>
               </div>
               <Button
@@ -367,7 +361,7 @@ export function IntegrationAdmin() {
                   try {
                     const result = await generateRoomStatusToken.mutateAsync();
                     setRevealedToken(result.token);
-                    setNotice("Новый webhook-токен создан. Скопируйте его в 1С.");
+                    setNotice(t("tokenCreated"));
                     await utils.integration.roomStatusConfig.invalidate();
                   } catch (tokenError) {
                     setError(errorText(tokenError));
@@ -376,7 +370,7 @@ export function IntegrationAdmin() {
                   }
                 }}
               >
-                {roomStatus?.tokenSet ? "Заменить токен" : "Сгенерировать токен"}
+                {roomStatus?.tokenSet ? t("replaceToken") : t("generateToken")}
               </Button>
             </div>
             {revealedToken ? (
@@ -384,7 +378,7 @@ export function IntegrationAdmin() {
                 readOnly
                 value={revealedToken}
                 className="mt-2 font-mono text-xs"
-                aria-label="Webhook-токен"
+                aria-label={t("webhookToken")}
               />
             ) : null}
           </div>
@@ -396,10 +390,10 @@ export function IntegrationAdmin() {
                 run(async () => {
                   await saveRoomStatus.mutateAsync(roomForm);
                   await utils.integration.roomStatusConfig.invalidate();
-                }, "Настройки статусов сохранены")
+                }, t("savedStatus"))
               }
             >
-              Сохранить обмен статусами
+              {t("saveStatus")}
             </Button>
             <Button
               variant="outline"
@@ -408,28 +402,25 @@ export function IntegrationAdmin() {
                 run(async () => {
                   const result = await pushRoomStatusesNow.mutateAsync();
                   setNotice(
-                    `Статусы: отправлено ${result.sent}, повтор ${result.pending}, ошибок ${result.failed}`,
+                    t("statusesPushed", { sent: result.sent, pending: result.pending, failed: result.failed }),
                   );
                   await utils.integration.roomStatusConfig.invalidate();
                 }, "")
               }
             >
-              Отправить статусы
+              {t("pushStatuses")}
             </Button>
           </div>
 
           <dl className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-5">
-            <div><dt className="text-muted-foreground">В очереди</dt><dd className="font-medium">{roomStatus?.stats.pending ?? 0}</dd></div>
-            <div><dt className="text-muted-foreground">Отправлено</dt><dd className="font-medium">{roomStatus?.stats.sent ?? 0}</dd></div>
-            <div><dt className="text-muted-foreground">Ошибки</dt><dd className="font-medium">{roomStatus?.stats.failed ?? 0}</dd></div>
-            <div><dt className="text-muted-foreground">Принято из 1С</dt><dd className="font-medium">{roomStatus?.stats.applied ?? 0}</dd></div>
-            <div><dt className="text-muted-foreground">Устаревших</dt><dd className="font-medium">{roomStatus?.stats.ignored ?? 0}</dd></div>
+            <div><dt className="text-muted-foreground">{t("statusQueued")}</dt><dd className="font-medium">{roomStatus?.stats.pending ?? 0}</dd></div>
+            <div><dt className="text-muted-foreground">{t("statusSent")}</dt><dd className="font-medium">{roomStatus?.stats.sent ?? 0}</dd></div>
+            <div><dt className="text-muted-foreground">{t("statusErrors")}</dt><dd className="font-medium">{roomStatus?.stats.failed ?? 0}</dd></div>
+            <div><dt className="text-muted-foreground">{t("statusApplied")}</dt><dd className="font-medium">{roomStatus?.stats.applied ?? 0}</dd></div>
+            <div><dt className="text-muted-foreground">{t("statusIgnored")}</dt><dd className="font-medium">{roomStatus?.stats.ignored ?? 0}</dd></div>
           </dl>
 
-          <p className="text-xs text-amber-700">
-            Контракт 1С (путь, поля JSON, наличие webhook) не подтверждён публичной
-            документацией. Перед включением проверьте его на тестовом контуре 1С.
-          </p>
+          <p className="text-xs text-amber-700">{t("contractWarning")}</p>
         </CardContent>
       </Card>
     </div>

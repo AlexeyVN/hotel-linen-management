@@ -1,26 +1,33 @@
 import Link from "next/link";
-import { LogoutButton } from "@/components/logout-button";
+import { getTranslations } from "next-intl/server";
+import packageJson from "../../../../package.json";
 import { OfflineQueuePanel } from "@/components/offline-queue-panel";
 import { getCurrentUser } from "@/lib/auth";
-
-const LINKS = [
-  { href: "/m/audit", title: "Инвентаризация", subtitle: "Остатки и расхождения по номеру" },
-  { href: "/m/distribute", title: "Раздача", subtitle: "Бельё и химия со склада" },
-  { href: "/m/scan", title: "Сканировать QR", subtitle: "Номер или позиция по метке" },
-];
+import { MobileLogoutButton } from "./logout-button";
 
 export default async function MaidMorePage() {
   const user = await getCurrentUser();
+  const t = await getTranslations("mobile");
+
+  const links = [
+    { href: "/m/audit", title: t("more.audit"), subtitle: t("more.auditSubtitle") },
+    {
+      href: "/m/distribute",
+      title: t("more.distribute"),
+      subtitle: t("more.distributeSubtitle"),
+    },
+    { href: "/m/scan", title: t("more.scan"), subtitle: t("more.scanSubtitle") },
+  ];
 
   return (
     <div className="mx-auto max-w-md space-y-4 p-4">
       <header>
-        <h1 className="text-xl font-semibold">Ещё</h1>
+        <h1 className="text-xl font-semibold">{t("more.title")}</h1>
         <p className="text-sm text-muted-foreground">{user?.fullName}</p>
       </header>
 
       <section className="space-y-2">
-        {LINKS.map((link) => (
+        {links.map((link) => (
           <Link
             key={link.href}
             href={link.href}
@@ -39,10 +46,10 @@ export default async function MaidMorePage() {
 
       <OfflineQueuePanel />
 
-      <LogoutButton />
+      <MobileLogoutButton />
 
       <p className="text-center text-xs text-muted-foreground">
-        Учёт белья · версия 1.3
+        {t("more.footer", { version: packageJson.version })}
       </p>
     </div>
   );

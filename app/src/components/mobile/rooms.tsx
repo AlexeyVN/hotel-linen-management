@@ -1,24 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
-import {
-  CLEANING_TYPE_LABELS,
-  PRIORITY_LABELS,
-  ROOM_STATUS_LABELS,
-  TASK_STATUS_LABELS,
-} from "@/lib/domain/cleaning";
 import { trpc } from "@/lib/trpc-client";
 
 type Filter = "ALL" | "CLEAN" | "DIRTY" | "INSPECTED" | "OUT_OF_ORDER";
 
-const FILTERS: Array<{ key: Filter; label: string }> = [
-  { key: "ALL", label: "Все" },
-  { key: "DIRTY", label: "Грязно" },
-  { key: "CLEAN", label: "Убрано" },
-  { key: "INSPECTED", label: "Проверено" },
-  { key: "OUT_OF_ORDER", label: "Ремонт" },
-];
+const FILTERS: Filter[] = ["ALL", "DIRTY", "CLEAN", "INSPECTED", "OUT_OF_ORDER"];
 
 interface RoomRow {
   id: string;
@@ -36,50 +25,84 @@ interface RoomRow {
 }
 
 export function MobileRooms() {
+  const t = useTranslations("mobile");
+  const tc = useTranslations("cleaning");
   const [filter, setFilter] = useState<Filter>("ALL");
   const roomsQuery = trpc.cleaning.myRooms.useQuery();
   const rooms = ((roomsQuery.data ?? []) as RoomRow[]).filter((room) =>
     filter === "ALL" ? true : room.cleaningStatus === filter,
   );
 
+  const filterLabels: Record<Filter, string> = {
+    ALL: t("rooms.filterAll"),
+    DIRTY: t("rooms.filterDirty"),
+    CLEAN: t("rooms.filterClean"),
+    INSPECTED: t("rooms.filterInspected"),
+    OUT_OF_ORDER: t("rooms.filterRepair"),
+  };
+  const typeLabels: Record<string, string> = {
+    DAILY: tc("daily"),
+    ON_DEMAND: tc("onDemand"),
+    GENERAL: tc("general"),
+  };
+  const priorityLabels: Record<string, string> = {
+    URGENT: tc("urgent"),
+    MEDIUM: tc("medium"),
+    LOW: tc("low"),
+  };
+  const statusLabels: Record<string, string> = {
+    NEW: tc("taskNew"),
+    IN_PROGRESS: tc("taskInProgress"),
+    DONE: tc("taskDone"),
+    CANCELLED: tc("taskCancelled"),
+  };
+  const roomStatusLabels: Record<string, string> = {
+    CLEAN: tc("clean"),
+    DIRTY: tc("dirty"),
+    INSPECTED: tc("inspected"),
+    OUT_OF_ORDER: tc("outOfOrder"),
+  };
+
   return (
     <div className="space-y-4 p-4">
       <header>
-        <h1 className="text-xl font-semibold">Мои номера</h1>
+        <h1 className="text-xl font-semibold">{t("rooms.title")}</h1>
         <p className="text-sm text-muted-foreground">
-          {rooms.length} из {(roomsQuery.data ?? []).length}
+          {t("rooms.count", { shown: rooms.length, total: (roomsQuery.data ?? []).length })}
         </p>
       </header>
 
       <div className="flex gap-2 overflow-x-auto pb-1">
-        {FILTERS.map((item) => (
+        {FILTERS.map((key) => (
           <button
-            key={item.key}
+            key={key}
             type="button"
-            onClick={() => setFilter(item.key)}
+            onClick={() => setFilter(key)}
             className={
-              filter === item.key
+              filter === key
                 ? "whitespace-nowrap rounded-full bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"
                 : "whitespace-nowrap rounded-full border bg-card px-3 py-2 text-sm"
             }
           >
-            {item.label}
+            {filterLabels[key]}
           </button>
         ))}
       </div>
 
       {rooms.length === 0 ? (
         <p className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">
-          Номеров с таким статусом нет.
+          {t("rooms.empty")}
         </p>
       ) : (
         rooms.map((room) => (
           <article key={room.id} className="rounded-xl border bg-card p-4">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="text-lg font-semibold">Номер {room.number}</p>
+                <p className="text-lg font-semibold">
+                  {t("labels.roomNumber", { number: room.number })}
+                </p>
                 <p className="text-xs text-muted-foreground">
-                  {room.floorLabel} этаж · {room.roomTypeName}
+                  {t("labels.floor", { floor: room.floorLabel })} · {room.roomTypeName}
                 </p>
               </div>
               <span
@@ -93,32 +116,32 @@ export function MobileRooms() {
                         : "rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground"
                 }
               >
-                {ROOM_STATUS_LABELS[room.cleaningStatus] ?? room.cleaningStatus}
+                {roomStatusLabels[room.cleaningStatus] ?? room.cleaningStatus}
               </span>
             </div>
 
             {room.activeTask ? (
               <div className="mt-3 rounded-lg border p-2 text-xs">
                 <p className="font-medium">
-                  {CLEANING_TYPE_LABELS[room.activeTask.type] ?? room.activeTask.type} ·{" "}
-                  {TASK_STATUS_LABELS[room.activeTask.status] ?? room.activeTask.status}
-                  {room.activeTask.priority === "URGENT" ? " · срочно" : ""}
+                  {typeLabels[room.activeTask.type] ?? room.activeTask.type} ·{" "}
+                  {statusLabels[room.activeTask.status] ?? room.activeTask.status}
+                  {room.activeTask.priority === "URGENT" ? ` · ${t("rooms.urgent")}` : ""}
                 </p>
                 <p className="text-muted-foreground">
-                  {PRIORITY_LABELS[room.activeTask.priority] ?? room.activeTask.priority}
-                  {room.activeTask.mine ? "" : " · назначена другой горничной"}
+                  {priorityLabels[room.activeTask.priority] ?? room.activeTask.priority}
+                  {room.activeTask.mine ? "" : ` · ${t("rooms.assignedToOther")}`}
                 </p>
                 {room.activeTask.mine ? (
                   <Link
                     href={`/m/tasks/${room.activeTask.id}`}
                     className="mt-2 flex h-10 items-center justify-center rounded-md bg-primary text-sm font-medium text-primary-foreground"
                   >
-                    Открыть задачу
+                    {t("rooms.openTask")}
                   </Link>
                 ) : null}
               </div>
             ) : (
-              <p className="mt-3 text-xs text-muted-foreground">Активной задачи нет.</p>
+              <p className="mt-3 text-xs text-muted-foreground">{t("rooms.noActiveTask")}</p>
             )}
           </article>
         ))

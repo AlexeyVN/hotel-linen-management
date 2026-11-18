@@ -103,6 +103,12 @@ const REQUIRED_NAMESPACES = [
   "qr",
   "auditSession",
   "qrPrint",
+  "reportsPage",
+  "users",
+  "rolesAdmin",
+  "permissionsUi",
+  "integration",
+  "mobile",
 ] as const;
 
 type Namespace = (typeof REQUIRED_NAMESPACES)[number];
@@ -146,6 +152,29 @@ const REQUIRED_KEYS: Record<Namespace, readonly string[]> = {
   qr: ["title", "generate", "download", "payloadFormat", "payloadJson", "printRooms"],
   auditSession: ["apply", "saveDraft", "discrepancies", "appliedSummary", "invalidQty"],
   qrPrint: ["title", "rooms", "items", "payloadFormat", "print"],
+  reportsPage: ["title", "intro", "tabStock", "stockTitle", "downloadExcel"],
+  users: ["title", "intro", "newUser", "create", "created", "passwordReset"],
+  rolesAdmin: ["title", "intro", "saved", "saveError", "save"],
+  permissionsUi: ["rooms_read", "users_manage", "roles_manage"],
+  integration: ["title", "intro", "save", "saved", "roomStatuses", "statusQueued"],
+  mobile: [
+    "tab.home",
+    "dashboard.greeting",
+    "dashboard.stats.myTasks",
+    "labels.roomNumber",
+    "errors.selectRoom",
+    "tasks.title",
+    "taskDetail.notFound",
+    "checklistAnswer.yes",
+    "rooms.title",
+    "auditList.title",
+    "auditSession.notFound",
+    "distribute.title",
+    "scan.title",
+    "more.footer",
+    "queue.status.pending",
+    "pwa.update",
+  ],
 };
 
 test("all five locale catalogs have identical nested key sets", () => {

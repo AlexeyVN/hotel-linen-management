@@ -1,23 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  CLEANING_TYPE_LABELS,
-  PRIORITY_LABELS,
-  ROOM_STATUS_LABELS,
-  TASK_STATUS_LABELS,
-} from "@/lib/domain/cleaning";
 import { trpc } from "@/lib/trpc-client";
 
 type View = "ACTIVE" | "DONE" | "ALL";
 
-const VIEWS: Array<{ key: View; label: string }> = [
-  { key: "ACTIVE", label: "Активные" },
-  { key: "DONE", label: "Выполненные" },
-  { key: "ALL", label: "Все" },
-];
+const VIEWS: View[] = ["ACTIVE", "DONE", "ALL"];
 
 interface TaskRow {
   id: string;
@@ -33,12 +24,42 @@ interface TaskRow {
 }
 
 export function MobileTasks() {
+  const t = useTranslations("mobile");
+  const tc = useTranslations("cleaning");
   const utils = trpc.useUtils();
   const [view, setView] = useState<View>("ACTIVE");
   const tasksQuery = trpc.cleaning.listMine.useQuery({ view });
   const setStatus = trpc.cleaning.setStatus.useMutation();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const viewLabels: Record<View, string> = {
+    ACTIVE: t("tasks.filterActive"),
+    DONE: t("tasks.filterDone"),
+    ALL: t("tasks.filterAll"),
+  };
+  const typeLabels: Record<string, string> = {
+    DAILY: tc("daily"),
+    ON_DEMAND: tc("onDemand"),
+    GENERAL: tc("general"),
+  };
+  const priorityLabels: Record<string, string> = {
+    URGENT: tc("urgent"),
+    MEDIUM: tc("medium"),
+    LOW: tc("low"),
+  };
+  const statusLabels: Record<string, string> = {
+    NEW: tc("taskNew"),
+    IN_PROGRESS: tc("taskInProgress"),
+    DONE: tc("taskDone"),
+    CANCELLED: tc("taskCancelled"),
+  };
+  const roomStatusLabels: Record<string, string> = {
+    CLEAN: tc("clean"),
+    DIRTY: tc("dirty"),
+    INSPECTED: tc("inspected"),
+    OUT_OF_ORDER: tc("outOfOrder"),
+  };
 
   const tasks = (tasksQuery.data ?? []) as TaskRow[];
 
@@ -53,7 +74,7 @@ export function MobileTasks() {
         utils.cleaning.myRooms.invalidate(),
       ]);
     } catch (mutationError) {
-      setError(mutationError instanceof Error ? mutationError.message : "Не удалось взять задачу");
+      setError(mutationError instanceof Error ? mutationError.message : t("tasks.errorTake"));
     } finally {
       setBusyId(null);
     }
@@ -62,23 +83,23 @@ export function MobileTasks() {
   return (
     <div className="space-y-4 p-4">
       <header>
-        <h1 className="text-xl font-semibold">Мои уборки</h1>
-        <p className="text-sm text-muted-foreground">Задачи по приоритету и статусу</p>
+        <h1 className="text-xl font-semibold">{t("tasks.title")}</h1>
+        <p className="text-sm text-muted-foreground">{t("tasks.subtitle")}</p>
       </header>
 
       <div className="flex gap-2">
-        {VIEWS.map((item) => (
+        {VIEWS.map((key) => (
           <button
-            key={item.key}
+            key={key}
             type="button"
-            onClick={() => setView(item.key)}
+            onClick={() => setView(key)}
             className={
-              view === item.key
+              view === key
                 ? "flex-1 rounded-full bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"
                 : "flex-1 rounded-full border bg-card px-3 py-2 text-sm"
             }
           >
-            {item.label}
+            {viewLabels[key]}
           </button>
         ))}
       </div>
@@ -91,7 +112,7 @@ export function MobileTasks() {
 
       {tasks.length === 0 ? (
         <p className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">
-          {view === "DONE" ? "Выполненных задач нет." : "Активных задач нет."}
+          {view === "DONE" ? t("tasks.emptyDone") : t("tasks.emptyActive")}
         </p>
       ) : (
         tasks.map((task) => (
@@ -99,10 +120,11 @@ export function MobileTasks() {
             <div className="flex items-start justify-between gap-2">
               <div>
                 <Link href={`/m/tasks/${task.id}`} className="text-lg font-semibold underline-offset-2 hover:underline">
-                  Номер {task.roomNumber}
+                  {t("labels.roomNumber", { number: task.roomNumber })}
                 </Link>
                 <p className="text-xs text-muted-foreground">
-                  {task.floorLabel} этаж · {ROOM_STATUS_LABELS[task.roomStatus] ?? task.roomStatus}
+                  {t("labels.floor", { floor: task.floorLabel })} ·{" "}
+                  {roomStatusLabels[task.roomStatus] ?? task.roomStatus}
                 </p>
               </div>
               <span
@@ -114,24 +136,29 @@ export function MobileTasks() {
                       : "rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700"
                 }
               >
-                {PRIORITY_LABELS[task.priority] ?? task.priority}
+                {priorityLabels[task.priority] ?? task.priority}
               </span>
             </div>
 
             <p className="mt-2 text-sm">
-              {CLEANING_TYPE_LABELS[task.type] ?? task.type}
-              {task.plannedMinutes ? ` · план ${task.plannedMinutes} мин` : ""}
+              {typeLabels[task.type] ?? task.type}
+              {task.plannedMinutes
+                ? ` · ${t("labels.planMinutes", { minutes: task.plannedMinutes })}`
+                : ""}
               {" · "}
               <span className={task.status === "DONE" ? "text-green-700" : "text-amber-700"}>
-                {TASK_STATUS_LABELS[task.status] ?? task.status}
+                {statusLabels[task.status] ?? task.status}
               </span>
             </p>
 
             {task.checklist ? (
               <p className="mt-1 text-xs text-muted-foreground">
-                Чек-лист «{task.checklist.name}»: {task.checklist.answered} из{" "}
-                {task.checklist.total}
-                {task.checklist.complete ? " · готов" : ""}
+                {t("tasks.checklistProgress", {
+                  name: task.checklist.name,
+                  answered: task.checklist.answered,
+                  total: task.checklist.total,
+                })}
+                {task.checklist.complete ? ` · ${t("tasks.checklistReady")}` : ""}
               </p>
             ) : null}
             {task.comment ? (
@@ -145,14 +172,14 @@ export function MobileTasks() {
                   disabled={busyId === task.id}
                   onClick={() => startTask(task.id)}
                 >
-                  {busyId === task.id ? "Берём…" : "Взять в работу"}
+                  {busyId === task.id ? t("tasks.taking") : t("tasks.take")}
                 </Button>
               ) : null}
               <Link
                 href={`/m/tasks/${task.id}`}
                 className="flex h-11 flex-1 items-center justify-center rounded-md border text-sm font-medium"
               >
-                Открыть задачу
+                {t("tasks.open")}
               </Link>
             </div>
           </article>

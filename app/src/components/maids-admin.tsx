@@ -188,7 +188,6 @@ export function MaidsAdmin() {
                     className="block rounded-md border bg-muted/40 p-2 text-xs hover:bg-muted"
                   >
                     {t("currentTask", { number: maid.currentTask.roomNumber, type: typeLabels[maid.currentTask.type] ?? maid.currentTask.type })}
-                    {maid.currentTask.type}
                     {t("since", { time: formatTime(maid.currentTask.startedAt, locale) })}
                   </Link>
                 ) : (

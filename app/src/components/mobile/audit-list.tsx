@@ -3,6 +3,7 @@
 import { TRPCClientError } from "@trpc/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { readCache, writeCache } from "@/lib/offline/cache";
@@ -26,6 +27,8 @@ const ROOMS_KEY = "cache.rooms.v1";
 const SESSIONS_KEY = "cache.audit.list.v1";
 
 export function MobileAuditList({ initialRoomId = "" }: { initialRoomId?: string }) {
+  const t = useTranslations("mobile");
+  const locale = useLocale();
   const router = useRouter();
   const utils = trpc.useUtils();
   const roomsQuery = trpc.rooms.list.useQuery();
@@ -58,11 +61,11 @@ export function MobileAuditList({ initialRoomId = "" }: { initialRoomId?: string
   async function handleStart() {
     setError(null);
     if (!roomId) {
-      setError("Выберите номер");
+      setError(t("errors.selectRoom"));
       return;
     }
     if (typeof navigator !== "undefined" && !navigator.onLine) {
-      setError("Начать инвентаризацию можно только при наличии сети");
+      setError(t("auditList.offlineStart"));
       return;
     }
     try {
@@ -73,7 +76,7 @@ export function MobileAuditList({ initialRoomId = "" }: { initialRoomId?: string
       setError(
         mutationError instanceof TRPCClientError
           ? mutationError.message
-          : "Не удалось начать инвентаризацию",
+          : t("auditList.startError"),
       );
     }
   }
@@ -81,8 +84,10 @@ export function MobileAuditList({ initialRoomId = "" }: { initialRoomId?: string
   return (
     <div className="space-y-4 p-4">
       <header>
-        <h1 className="text-xl font-semibold">Инвентаризация</h1>
-        <p className="text-sm text-muted-foreground">Мои номера: {rooms.length}</p>
+        <h1 className="text-xl font-semibold">{t("auditList.title")}</h1>
+        <p className="text-sm text-muted-foreground">
+          {t("auditList.roomsCount", { count: rooms.length })}
+        </p>
       </header>
 
       {error ? (
@@ -93,13 +98,13 @@ export function MobileAuditList({ initialRoomId = "" }: { initialRoomId?: string
 
       <div className="rounded-xl border bg-card p-4">
         <label className="block text-sm">
-          <span className="mb-2 block text-muted-foreground">Номер</span>
+          <span className="mb-2 block text-muted-foreground">{t("labels.room")}</span>
           <select
             value={roomId}
             onChange={(event) => setRoomId(event.target.value)}
             className="h-12 w-full rounded-md border bg-background px-3 text-base"
           >
-            <option value="">— выберите —</option>
+            <option value="">{t("labels.choose")}</option>
             {rooms.map((room) => (
               <option key={room.id} value={room.id}>
                 {room.number} · {room.roomTypeName}
@@ -108,14 +113,14 @@ export function MobileAuditList({ initialRoomId = "" }: { initialRoomId?: string
           </select>
         </label>
         <Button className="mt-3 h-12 w-full text-base" onClick={handleStart} disabled={start.isPending}>
-          {start.isPending ? "Создаём…" : "Начать инвентаризацию"}
+          {start.isPending ? t("auditList.starting") : t("auditList.startButton")}
         </Button>
       </div>
 
       <section className="space-y-2">
-        <h2 className="text-sm font-medium text-muted-foreground">Мои сессии</h2>
+        <h2 className="text-sm font-medium text-muted-foreground">{t("auditList.sessions")}</h2>
         {sessions.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Пока нет инвентаризаций.</p>
+          <p className="text-sm text-muted-foreground">{t("auditList.empty")}</p>
         ) : (
           <ul className="space-y-2">
             {sessions.map((session) => (
@@ -126,11 +131,12 @@ export function MobileAuditList({ initialRoomId = "" }: { initialRoomId?: string
                 >
                   <span>
                     <span className="block text-base font-semibold">
-                      Номер {session.roomNumber}
+                      {t("labels.roomNumber", { number: session.roomNumber })}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {session.status === "APPLIED" ? "проведена" : "черновик"} ·{" "}
-                      {new Intl.DateTimeFormat("ru-RU", {
+                      {session.status === "APPLIED" ? t("auditList.applied") : t("auditList.draft")}{" "}
+                      ·{" "}
+                      {new Intl.DateTimeFormat(locale, {
                         dateStyle: "short",
                         timeStyle: "short",
                       }).format(new Date(session.startedAt))}

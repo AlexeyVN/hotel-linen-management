@@ -1,17 +1,13 @@
 "use client";
 
 import { TRPCClientError } from "@trpc/client";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc-client";
 
-const ROLE_LABELS: Record<string, string> = {
-  ADMIN: "Администратор",
-  MANAGER: "Менеджер",
-  MAID: "Горничная",
-};
 
 function errorText(error: unknown): string {
   if (error instanceof TRPCClientError) return error.message;
@@ -41,6 +37,13 @@ function PencilIcon() {
 }
 
 export function UsersAdmin() {
+  const t = useTranslations("users");
+  const tRoles = useTranslations("roles");
+  const roleLabels: Record<string, string> = {
+    ADMIN: tRoles("ADMIN"),
+    MANAGER: tRoles("MANAGER"),
+    MAID: tRoles("MAID"),
+  };
   const utils = trpc.useUtils();
   const usersQuery = trpc.users.list.useQuery();
   const roomsQuery = trpc.rooms.list.useQuery();
@@ -85,7 +88,7 @@ export function UsersAdmin() {
     try {
       await createUser.mutateAsync(form);
       setForm({ login: "", fullName: "", password: "", roleCode: "MAID" });
-      setNotice("Пользователь создан");
+      setNotice(t("created"));
       await refresh();
     } catch (mutationError) {
       setError(errorText(mutationError));
@@ -121,7 +124,7 @@ export function UsersAdmin() {
         login: editDraft.login,
         fullName: editDraft.fullName,
       });
-      setNotice("Данные пользователя обновлены");
+      setNotice(t("updated"));
       setEditId(null);
       await refresh();
     } catch (mutationError) {
@@ -132,9 +135,9 @@ export function UsersAdmin() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold">Пользователи и роли</h1>
+        <h1 className="text-2xl font-semibold">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">
-          Добавление горничных, назначение номеров, смена роли, сброс пароля.
+          {t("intro")}
         </p>
       </header>
 
@@ -147,12 +150,12 @@ export function UsersAdmin() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Новый пользователь</CardTitle>
+          <CardTitle>{t("newUser")}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleCreate} className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <label className="text-sm">
-              <span className="mb-1 block text-muted-foreground">Логин</span>
+              <span className="mb-1 block text-muted-foreground">{t("login")}</span>
               <Input
                 value={form.login}
                 onChange={(event) =>
@@ -165,11 +168,11 @@ export function UsersAdmin() {
                 autoComplete="off"
               />
               <span className="mt-1 block text-xs text-muted-foreground">
-                латиница, цифры, точка, дефис, подчёркивание
+                {t("loginHint")}
               </span>
             </label>
             <label className="text-sm">
-              <span className="mb-1 block text-muted-foreground">ФИО</span>
+              <span className="mb-1 block text-muted-foreground">{t("fullName")}</span>
               <Input
                 value={form.fullName}
                 onChange={(event) => setForm({ ...form, fullName: event.target.value })}
@@ -180,7 +183,7 @@ export function UsersAdmin() {
               />
             </label>
             <label className="text-sm">
-              <span className="mb-1 block text-muted-foreground">Пароль</span>
+              <span className="mb-1 block text-muted-foreground">{t("password")}</span>
               <Input
                 type="password"
                 value={form.password}
@@ -190,10 +193,10 @@ export function UsersAdmin() {
                 maxLength={100}
                 autoComplete="new-password"
               />
-              <span className="mt-1 block text-xs text-muted-foreground">не менее 8 символов</span>
+              <span className="mt-1 block text-xs text-muted-foreground">{t("passwordHint")}</span>
             </label>
             <label className="text-sm">
-              <span className="mb-1 block text-muted-foreground">Роль</span>
+              <span className="mb-1 block text-muted-foreground">{t("role")}</span>
               <select
                 value={form.roleCode}
                 onChange={(event) =>
@@ -204,7 +207,7 @@ export function UsersAdmin() {
                 }
                 className="h-10 w-full rounded-md border bg-background px-3 text-sm"
               >
-                {Object.entries(ROLE_LABELS).map(([code, label]) => (
+                {Object.entries(roleLabels).map(([code, label]) => (
                   <option key={code} value={code}>
                     {label}
                   </option>
@@ -213,7 +216,7 @@ export function UsersAdmin() {
             </label>
             <div className="flex items-end md:col-span-2 xl:col-span-4">
               <Button type="submit" disabled={createUser.isPending} className="w-full sm:w-auto">
-                {createUser.isPending ? "Создаём…" : "Создать пользователя"}
+                {createUser.isPending ? t("creating") : t("create")}
               </Button>
             </div>
           </form>
@@ -222,7 +225,7 @@ export function UsersAdmin() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Пользователи ({users.length})</CardTitle>
+          <CardTitle>{t("users")} ({users.length})</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {users.map((user) => {
@@ -252,7 +255,7 @@ export function UsersAdmin() {
                           {user.login}
                         </span>
                         <span aria-hidden="true">·</span>
-                        <span>{ROLE_LABELS[user.roleCode] ?? user.roleCode}</span>
+                        <span>{roleLabels[user.roleCode] ?? user.roleCode}</span>
                         <span
                           className={
                             user.isActive
@@ -260,7 +263,7 @@ export function UsersAdmin() {
                               : "rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground"
                           }
                         >
-                          {user.isActive ? "Активен" : "Деактивирован"}
+                          {user.isActive ? t("active") : t("inactive")}
                         </span>
                       </div>
                     </div>
@@ -272,7 +275,7 @@ export function UsersAdmin() {
                       onClick={() => startEdit(user)}
                     >
                       <PencilIcon />
-                      Изменить ФИО / логин
+                      {t("editProfile")}
                     </Button>
                   ) : null}
                 </div>
@@ -281,7 +284,7 @@ export function UsersAdmin() {
                   <div className="rounded-md border bg-muted/30 p-3">
                     <div className="grid gap-3 sm:grid-cols-2">
                       <label className="text-sm">
-                        <span className="mb-1 block text-muted-foreground">ФИО</span>
+                        <span className="mb-1 block text-muted-foreground">{t("fullName")}</span>
                         <Input
                           value={editDraft.fullName}
                           onChange={(event) =>
@@ -293,7 +296,7 @@ export function UsersAdmin() {
                         />
                       </label>
                       <label className="text-sm">
-                        <span className="mb-1 block text-muted-foreground">Логин</span>
+                        <span className="mb-1 block text-muted-foreground">{t("login")}</span>
                         <Input
                           value={editDraft.login}
                           onChange={(event) =>
@@ -308,10 +311,10 @@ export function UsersAdmin() {
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Button onClick={saveEdit} disabled={updateProfile.isPending}>
-                        {updateProfile.isPending ? "Сохраняем…" : "Сохранить"}
+                        {updateProfile.isPending ? t("saving") : t("save")}
                       </Button>
                       <Button variant="outline" onClick={() => setEditId(null)}>
-                        Отмена
+                        {t("cancel")}
                       </Button>
                     </div>
                   </div>
@@ -319,7 +322,7 @@ export function UsersAdmin() {
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                   <label className="text-sm sm:w-[220px]">
-                    <span className="mb-1 block text-muted-foreground">Роль</span>
+                    <span className="mb-1 block text-muted-foreground">{t("role")}</span>
                     <select
                       value={user.roleCode}
                       onChange={(event) =>
@@ -329,12 +332,12 @@ export function UsersAdmin() {
                               userId: user.id,
                               roleCode: event.target.value as "ADMIN" | "MANAGER" | "MAID",
                             }),
-                          "Роль изменена",
+                          t("roleChanged"),
                         )
                       }
                       className="h-10 w-full rounded-md border bg-background px-3 text-sm"
                     >
-                      {Object.entries(ROLE_LABELS).map(([code, label]) => (
+                      {Object.entries(roleLabels).map(([code, label]) => (
                         <option key={code} value={code}>
                           {label}
                         </option>
@@ -349,20 +352,20 @@ export function UsersAdmin() {
                     onClick={() =>
                       run(
                         () => setActive.mutateAsync({ userId: user.id, isActive: !user.isActive }),
-                        user.isActive ? "Пользователь деактивирован" : "Пользователь активирован",
+                        user.isActive ? t("deactivated") : t("activated"),
                       )
                     }
                   >
-                    {user.isActive ? "Деактивировать" : "Активировать"}
+                    {user.isActive ? t("deactivate") : t("activate")}
                   </Button>
                 </div>
 
                 <div className="rounded-md border bg-muted/20">
                   <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
                     <div>
-                      <p className="text-sm font-medium">Пароль</p>
+                      <p className="text-sm font-medium">{t("password")}</p>
                       <p className="text-xs text-muted-foreground">
-                        {passwordShown ? "Задайте новый пароль и подтвердите сброс." : "Смена пароля — отдельное действие."}
+                        {passwordShown ? t("passwordPrompt") : t("changePassword")}
                       </p>
                     </div>
                     <Button
@@ -373,14 +376,14 @@ export function UsersAdmin() {
                         setPasswordOpen({ ...passwordOpen, [user.id]: !passwordShown })
                       }
                     >
-                      {passwordShown ? "Скрыть" : "Сменить пароль"}
+                      {passwordShown ? t("hidePassword") : t("changePasswordAction")}
                     </Button>
                   </div>
                   {passwordShown ? (
                     <div className="flex flex-col gap-2 border-t p-3 sm:flex-row sm:items-start">
                       <div className="min-w-0 flex-1 text-sm">
                         <label htmlFor={`password-${user.id}`} className="mb-1 block text-muted-foreground">
-                          Новый пароль
+                          {t("newPassword")}
                         </label>
                         <Input
                           id={`password-${user.id}`}
@@ -398,7 +401,7 @@ export function UsersAdmin() {
                           id={`password-help-${user.id}`}
                           className="mt-1 text-xs text-muted-foreground"
                         >
-                          Не менее 8 символов
+                          {t("passwordMin")}
                         </p>
                       </div>
                       <Button
@@ -415,11 +418,11 @@ export function UsersAdmin() {
                               setPasswords({ ...passwords, [user.id]: "" });
                               setPasswordOpen({ ...passwordOpen, [user.id]: false });
                             },
-                            "Пароль сброшен",
+                            t("passwordReset"),
                           )
                         }
                       >
-                        Сбросить
+                        {t("resetPassword")}
                       </Button>
                     </div>
                   ) : null}
@@ -428,7 +431,7 @@ export function UsersAdmin() {
                 {isMaid ? (
                   <div className="rounded-md border bg-muted/40 p-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-sm font-medium">Назначенные номера</p>
+                      <p className="text-sm font-medium">{t("assignedRooms")}</p>
                       <Button
                         variant="outline"
                         className="h-10 w-full sm:w-auto"
@@ -439,11 +442,11 @@ export function UsersAdmin() {
                                 userId: user.id,
                                 roomIds: selectedRooms,
                               }),
-                            "Номера назначены",
+                            t("roomsAssigned"),
                           )
                         }
                       >
-                        Сохранить номера
+                        {t("saveRooms")}
                       </Button>
                     </div>
                     <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">

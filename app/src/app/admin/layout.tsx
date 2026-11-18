@@ -75,7 +75,7 @@ export default async function AdminLayout({
       const items = node.items
         .filter((item) => hasPermission(user, item.permission))
         .map(({ href, labelKey }) => ({ href, label: t(labelKey) }));
-      if (items.length > 0) nav.push({ label: t(node.labelKey), items });
+      if (items.length > 0) nav.push({ id: node.labelKey, label: t(node.labelKey), items });
     } else if (hasPermission(user, node.permission)) {
       nav.push({ href: node.href, label: t(node.labelKey) });
     }

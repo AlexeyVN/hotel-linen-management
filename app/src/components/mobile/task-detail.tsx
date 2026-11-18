@@ -1,16 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  CLEANING_TYPE_LABELS,
-  PRIORITY_LABELS,
-  ROOM_STATUS_LABELS,
-  TASK_STATUS_LABELS,
-} from "@/lib/domain/cleaning";
-import { CHECKLIST_ANSWER_LABELS } from "@/lib/domain/checklist";
 import { trpc } from "@/lib/trpc-client";
 
 interface ChecklistItemView {
@@ -43,6 +37,8 @@ interface TaskDetail {
 }
 
 export function MobileTaskDetail({ taskId }: { taskId: string }) {
+  const t = useTranslations("mobile");
+  const tc = useTranslations("cleaning");
   const utils = trpc.useUtils();
   const query = trpc.cleaning.get.useQuery({ taskId });
   const setStatus = trpc.cleaning.setStatus.useMutation();
@@ -55,6 +51,34 @@ export function MobileTaskDetail({ taskId }: { taskId: string }) {
   const [uploadingItem, setUploadingItem] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+
+  const typeLabels: Record<string, string> = {
+    DAILY: tc("daily"),
+    ON_DEMAND: tc("onDemand"),
+    GENERAL: tc("general"),
+  };
+  const priorityLabels: Record<string, string> = {
+    URGENT: tc("urgent"),
+    MEDIUM: tc("medium"),
+    LOW: tc("low"),
+  };
+  const statusLabels: Record<string, string> = {
+    NEW: tc("taskNew"),
+    IN_PROGRESS: tc("taskInProgress"),
+    DONE: tc("taskDone"),
+    CANCELLED: tc("taskCancelled"),
+  };
+  const roomStatusLabels: Record<string, string> = {
+    CLEAN: tc("clean"),
+    DIRTY: tc("dirty"),
+    INSPECTED: tc("inspected"),
+    OUT_OF_ORDER: tc("outOfOrder"),
+  };
+  const answerLabels: Record<string, string> = {
+    YES: t("checklistAnswer.yes"),
+    NO: t("checklistAnswer.no"),
+    EXTRA: t("checklistAnswer.extra"),
+  };
 
   useEffect(() => {
     setOnline(navigator.onLine);
@@ -91,14 +115,16 @@ export function MobileTaskDetail({ taskId }: { taskId: string }) {
       await setStatus.mutateAsync({ taskId, status });
       setNotice(
         status === "DONE"
-          ? "Уборка выполнена: номер чистый"
+          ? t("taskDetail.noticeDone")
           : status === "CANCELLED"
-            ? "Отказ от уборки зафиксирован"
-            : "Задача в работе",
+            ? t("taskDetail.noticeCancelled")
+            : t("taskDetail.noticeInProgress"),
       );
       await refresh();
     } catch (mutationError) {
-      setError(mutationError instanceof Error ? mutationError.message : "Не удалось изменить статус");
+      setError(
+        mutationError instanceof Error ? mutationError.message : t("taskDetail.errorStatus"),
+      );
     } finally {
       setBusy(false);
     }
@@ -106,7 +132,7 @@ export function MobileTaskDetail({ taskId }: { taskId: string }) {
 
   async function submitAnswer(itemId: string, value: "YES" | "NO" | "EXTRA") {
     if (!online) {
-      setError("Отметки чек-листа можно ставить при наличии сети");
+      setError(t("taskDetail.errorChecklistOffline"));
       return;
     }
     setError(null);
@@ -115,12 +141,15 @@ export function MobileTaskDetail({ taskId }: { taskId: string }) {
       const result = await answerMutation.mutateAsync({ taskId, itemId, answer: value });
       setNotice(
         result.progress.complete
-          ? "Чек-лист заполнен — можно завершать уборку"
-          : `Отмечено ${result.progress.answered} из ${result.progress.total}`,
+          ? t("taskDetail.noticeChecklistComplete")
+          : t("taskDetail.noticeAnswered", {
+              answered: result.progress.answered,
+              total: result.progress.total,
+            }),
       );
       await refresh();
     } catch (mutationError) {
-      setError(mutationError instanceof Error ? mutationError.message : "Ошибка отметки");
+      setError(mutationError instanceof Error ? mutationError.message : t("taskDetail.errorAnswer"));
     }
   }
 
@@ -129,7 +158,7 @@ export function MobileTaskDetail({ taskId }: { taskId: string }) {
     setError(null);
     setNotice(null);
     if (!online) {
-      setError("Фото можно загрузить только при наличии сети");
+      setError(t("errors.photoOffline"));
       return;
     }
     setUploadingItem(itemId);
@@ -142,12 +171,14 @@ export function MobileTaskDetail({ taskId }: { taskId: string }) {
       });
       if (!response.ok) {
         const payload = (await response.json().catch(() => ({}))) as { error?: string };
-        throw new Error(payload.error ?? "Не удалось загрузить фото");
+        throw new Error(payload.error ?? t("errors.photoUpload"));
       }
-      setNotice("Фото загружено");
+      setNotice(t("taskDetail.noticePhotoUploaded"));
       await refresh();
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : "Ошибка загрузки фото");
+      setError(
+        uploadError instanceof Error ? uploadError.message : t("errors.photoUploadGeneric"),
+      );
     } finally {
       setUploadingItem(null);
     }
@@ -158,24 +189,26 @@ export function MobileTaskDetail({ taskId }: { taskId: string }) {
     setNotice(null);
     try {
       await addComment.mutateAsync({ taskId, comment });
-      setNotice("Комментарий сохранён");
+      setNotice(t("taskDetail.noticeCommentSaved"));
       await refresh();
     } catch (mutationError) {
-      setError(mutationError instanceof Error ? mutationError.message : "Не удалось сохранить комментарий");
+      setError(
+        mutationError instanceof Error ? mutationError.message : t("taskDetail.errorCommentSave"),
+      );
     }
   }
 
   if (query.isLoading) {
-    return <p className="p-4 text-sm text-muted-foreground">Загружаем задачу…</p>;
+    return <p className="p-4 text-sm text-muted-foreground">{t("taskDetail.loading")}</p>;
   }
   if (!task) {
     return (
       <div className="space-y-3 p-4">
         <p role="alert" className="text-sm text-destructive">
-          {query.error?.message ?? "Задача не найдена"}
+          {query.error?.message ?? t("taskDetail.notFound")}
         </p>
         <Link href="/m/tasks" className="text-sm text-primary underline">
-          ← К задачам
+          {t("taskDetail.back")}
         </Link>
       </div>
     );
@@ -187,18 +220,22 @@ export function MobileTaskDetail({ taskId }: { taskId: string }) {
   return (
     <div className="space-y-4 p-4">
       <Link href="/m/tasks" className="text-sm text-primary underline">
-        ← К задачам
+        {t("taskDetail.back")}
       </Link>
 
       <header className="space-y-1">
-        <h1 className="text-xl font-semibold">Номер {task.roomNumber}</h1>
+        <h1 className="text-xl font-semibold">
+          {t("labels.roomNumber", { number: task.roomNumber })}
+        </h1>
         <p className="text-sm text-muted-foreground">
-          {task.floorLabel} этаж · {task.roomTypeName} ·{" "}
-          {ROOM_STATUS_LABELS[task.roomStatus] ?? task.roomStatus}
+          {t("labels.floor", { floor: task.floorLabel })} · {task.roomTypeName} ·{" "}
+          {roomStatusLabels[task.roomStatus] ?? task.roomStatus}
         </p>
         <p className="text-sm">
-          {CLEANING_TYPE_LABELS[task.type] ?? task.type}
-          {task.plannedMinutes ? ` · план ${task.plannedMinutes} мин` : ""}
+          {typeLabels[task.type] ?? task.type}
+          {task.plannedMinutes
+            ? ` · ${t("labels.planMinutes", { minutes: task.plannedMinutes })}`
+            : ""}
           {" · "}
           <span
             className={
@@ -209,14 +246,14 @@ export function MobileTaskDetail({ taskId }: { taskId: string }) {
                   : "text-green-700"
             }
           >
-            {PRIORITY_LABELS[task.priority] ?? task.priority}
+            {priorityLabels[task.priority] ?? task.priority}
           </span>
           {" · "}
-          {TASK_STATUS_LABELS[task.status] ?? task.status}
+          {statusLabels[task.status] ?? task.status}
         </p>
         {!online ? (
           <p className="rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-800">
-            Офлайн: отметки чек-листа и фото недоступны
+            {t("taskDetail.offlineHint")}
           </p>
         ) : null}
       </header>
@@ -257,7 +294,9 @@ export function MobileTaskDetail({ taskId }: { taskId: string }) {
                 <p className="text-sm font-medium">
                   {item.text}
                   {item.photoRequired ? (
-                    <span className="ml-1 text-xs text-muted-foreground">· фото</span>
+                    <span className="ml-1 text-xs text-muted-foreground">
+                      · {t("taskDetail.photoRequired")}
+                    </span>
                   ) : null}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -273,7 +312,7 @@ export function MobileTaskDetail({ taskId }: { taskId: string }) {
                           : "rounded-full border px-3 py-1 text-xs"
                       }
                     >
-                      {CHECKLIST_ANSWER_LABELS[value]}
+                      {answerLabels[value]}
                     </button>
                   ))}
                   {item.extraOptionText ? (
@@ -302,14 +341,20 @@ export function MobileTaskDetail({ taskId }: { taskId: string }) {
                         className="block h-14 w-14 overflow-hidden rounded border"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={item.photoUrl} alt="Фото пункта" className="h-full w-full object-cover" />
+                        <img
+                          src={item.photoUrl}
+                          alt={t("taskDetail.photoAlt")}
+                          className="h-full w-full object-cover"
+                        />
                       </a>
                     ) : (
-                      <span className="text-xs text-muted-foreground">Фото не загружено</span>
+                      <span className="text-xs text-muted-foreground">{t("taskDetail.noPhoto")}</span>
                     )}
                     {isOpen ? (
                       <label className="text-xs text-primary underline">
-                        {uploadingItem === item.id ? "Загружаем…" : "Добавить фото"}
+                        {uploadingItem === item.id
+                          ? t("taskDetail.uploading")
+                          : t("taskDetail.addPhoto")}
                         <input
                           type="file"
                           accept="image/jpeg,image/png,image/webp"
@@ -332,16 +377,16 @@ export function MobileTaskDetail({ taskId }: { taskId: string }) {
       ) : null}
 
       <section className="rounded-xl border bg-card p-4">
-        <h2 className="text-sm font-medium">Комментарий</h2>
+        <h2 className="text-sm font-medium">{t("taskDetail.comment")}</h2>
         <Input
           value={comment}
           maxLength={300}
           onChange={(event) => setComment(event.target.value)}
-          placeholder="Например: нужен мелкий ремонт, забытые вещи"
+          placeholder={t("taskDetail.commentPlaceholder")}
           className="mt-2 h-11"
         />
         <Button variant="outline" className="mt-2 h-11 w-full" onClick={saveComment}>
-          Сохранить комментарий
+          {t("taskDetail.saveComment")}
         </Button>
       </section>
 
@@ -349,7 +394,7 @@ export function MobileTaskDetail({ taskId }: { taskId: string }) {
         <section className="space-y-2">
           {task.status === "NEW" ? (
             <Button className="h-12 w-full text-base" disabled={busy} onClick={() => changeStatus("IN_PROGRESS")}>
-              Взять в работу
+              {t("tasks.take")}
             </Button>
           ) : (
             <Button
@@ -358,8 +403,11 @@ export function MobileTaskDetail({ taskId }: { taskId: string }) {
               onClick={() => changeStatus("DONE")}
             >
               {checklist && !checklist.progress.complete
-                ? `Заполните чек-лист (${checklist.progress.answered}/${checklist.progress.total})`
-                : "Уборка выполнена"}
+                ? t("taskDetail.fillChecklist", {
+                    answered: checklist.progress.answered,
+                    total: checklist.progress.total,
+                  })
+                : t("taskDetail.completeTask")}
             </Button>
           )}
           <Button
@@ -368,12 +416,14 @@ export function MobileTaskDetail({ taskId }: { taskId: string }) {
             disabled={busy}
             onClick={() => changeStatus("CANCELLED")}
           >
-            Отказ от уборки
+            {t("taskDetail.refuse")}
           </Button>
         </section>
       ) : (
         <p className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">
-          Задача закрыта. Статус «{TASK_STATUS_LABELS[task.status] ?? task.status}».
+          {t("taskDetail.closed", {
+            status: statusLabels[task.status] ?? task.status,
+          })}
         </p>
       )}
     </div>

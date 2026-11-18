@@ -15,6 +15,7 @@ export interface NavItem {
 }
 
 export interface NavGroup {
+  id?: string;
   label: string;
   items: NavItem[];
 }
@@ -42,9 +43,10 @@ export function AdminShell({
 }) {
   const pathname = usePathname();
   const tCommon = useTranslations("common");
-  const activeGroup = nav
+  const activeGroupEntry = nav
     .filter(isGroup)
-    .find((group) => group.items.some((item) => isActive(pathname, item.href)))?.label;
+    .find((group) => group.items.some((item) => isActive(pathname, item.href)));
+  const activeGroup = activeGroupEntry ? (activeGroupEntry.id ?? activeGroupEntry.label) : undefined;
 
   const [openGroups, setOpenGroups] = useState<string[]>(activeGroup ? [activeGroup] : []);
   useEffect(() => {
@@ -67,7 +69,7 @@ export function AdminShell({
         <div className="border-b px-4 py-4">
           <BrandMark
             logoUrl={branding?.logoUrl}
-            fallback={branding?.hotelName || "Учёт белья"}
+            fallback={branding?.hotelName || tCommon("appFallback")}
             className="h-10 w-auto max-w-[160px] object-contain"
           />
           {branding?.logoUrl && branding.hotelName ? (
@@ -95,14 +97,15 @@ export function AdminShell({
               );
             }
 
-            const open = openGroups.includes(entry.label);
+            const groupId = entry.id ?? entry.label;
+            const open = openGroups.includes(groupId);
             const groupActive = entry.items.some((item) => isActive(pathname, item.href));
             return (
-              <div key={entry.label}>
+              <div key={groupId}>
                 <button
                   type="button"
                   aria-expanded={open}
-                  onClick={() => toggleGroup(entry.label)}
+                  onClick={() => toggleGroup(groupId)}
                   className={cn(
                     "flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors",
                     groupActive && !open

@@ -1,6 +1,7 @@
 "use client";
 
 import { TRPCClientError } from "@trpc/client";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ export function MobileDistribute({
   initialRoomId?: string;
   initialItemId?: string;
 }) {
+  const t = useTranslations("mobile");
   const utils = trpc.useUtils();
   const roomsQuery = trpc.rooms.list.useQuery();
   const itemsQuery = trpc.operations.distributableItems.useQuery();
@@ -85,15 +87,15 @@ export function MobileDistribute({
 
     const quantity = Number(qty);
     if (!roomId) {
-      setError("Выберите номер");
+      setError(t("errors.selectRoom"));
       return;
     }
     if (!itemId) {
-      setError("Выберите позицию");
+      setError(t("errors.selectItem"));
       return;
     }
     if (!Number.isInteger(quantity) || quantity <= 0) {
-      setError("Количество — целое число больше нуля");
+      setError(t("errors.quantity"));
       return;
     }
 
@@ -102,11 +104,14 @@ export function MobileDistribute({
     if (!navigator.onLine) {
       await addMutation({
         kind: "DISTRIBUTE",
-        label: `Раздача: ${selectedItem?.name ?? "позиция"} × ${quantity}`,
+        label: t("queue.distributeLabel", {
+          item: selectedItem?.name ?? t("distribute.itemFallback"),
+          qty: quantity,
+        }),
         payload: { roomId, items: [{ itemId, qty: quantity }] },
         clientOpId,
       });
-      setNotice("Нет сети: раздача в очереди, уйдёт при появлении сети");
+      setNotice(t("distribute.queuedNotice"));
       setQty("1");
       return;
     }
@@ -118,7 +123,7 @@ export function MobileDistribute({
         items: [{ itemId, qty: quantity }],
         clientOpId,
       });
-      setNotice("Раздача проведена");
+      setNotice(t("distribute.success"));
       setQty("1");
       await utils.operations.distributableItems.invalidate();
       await utils.items.list.invalidate();
@@ -126,7 +131,7 @@ export function MobileDistribute({
       setError(
         mutationError instanceof TRPCClientError
           ? mutationError.message
-          : "Не удалось провести раздачу",
+          : t("distribute.error"),
       );
     } finally {
       setBusy(false);
@@ -136,9 +141,9 @@ export function MobileDistribute({
   return (
     <form onSubmit={handleSubmit} className="space-y-4 p-4">
       <header>
-        <h1 className="text-xl font-semibold">Раздача</h1>
+        <h1 className="text-xl font-semibold">{t("distribute.title")}</h1>
         <p className="text-sm text-muted-foreground">
-          {online ? "Бельё и химия со склада в номер" : "Офлайн: раздача уйдёт в очередь"}
+          {online ? t("distribute.subtitle") : t("distribute.offlineHint")}
         </p>
       </header>
 
@@ -150,13 +155,13 @@ export function MobileDistribute({
       {notice ? <p className="text-sm text-green-700">{notice}</p> : null}
 
       <label className="block text-sm">
-        <span className="mb-2 block text-muted-foreground">Номер</span>
+        <span className="mb-2 block text-muted-foreground">{t("labels.room")}</span>
         <select
           value={roomId}
           onChange={(event) => setRoomId(event.target.value)}
           className="h-12 w-full rounded-md border bg-background px-3 text-base"
         >
-          <option value="">— выберите —</option>
+          <option value="">{t("labels.choose")}</option>
           {rooms.map((room) => (
             <option key={room.id} value={room.id}>
               {room.number} · {room.roomTypeName}
@@ -166,13 +171,13 @@ export function MobileDistribute({
       </label>
 
       <label className="block text-sm">
-        <span className="mb-2 block text-muted-foreground">Позиция</span>
+        <span className="mb-2 block text-muted-foreground">{t("labels.item")}</span>
         <select
           value={itemId}
           onChange={(event) => setItemId(event.target.value)}
           className="h-12 w-full rounded-md border bg-background px-3 text-base"
         >
-          <option value="">— выберите —</option>
+          <option value="">{t("labels.choose")}</option>
           {items.map((item) => (
             <option key={item.id} value={item.id}>
               {item.name} ({item.unit})
@@ -181,13 +186,16 @@ export function MobileDistribute({
         </select>
         {selectedItem ? (
           <span className="mt-1 block text-xs text-muted-foreground">
-            на складе: {selectedItem.warehouseQty} {selectedItem.unit}
+            {t("distribute.inStock", {
+              qty: selectedItem.warehouseQty,
+              unit: selectedItem.unit,
+            })}
           </span>
         ) : null}
       </label>
 
       <label className="block text-sm">
-        <span className="mb-2 block text-muted-foreground">Количество</span>
+        <span className="mb-2 block text-muted-foreground">{t("labels.quantity")}</span>
         <div className="flex items-center gap-2">
           <Button
             type="button"
@@ -218,7 +226,11 @@ export function MobileDistribute({
       </label>
 
       <Button type="submit" className="h-12 w-full text-base" disabled={busy}>
-        {busy ? "Проводим…" : online ? "Раздать" : "Поставить в очередь"}
+        {busy
+          ? t("distribute.submitting")
+          : online
+            ? t("distribute.submit")
+            : t("distribute.queueSubmit")}
       </Button>
     </form>
   );

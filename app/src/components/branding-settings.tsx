@@ -43,6 +43,16 @@ const CHECKERBOARD: React.CSSProperties = {
 
 export function BrandingSettings() {
   const tBranding = useTranslations("branding");
+  const colorLabels: Record<string, string> = {
+    blue: tBranding("blue"),
+    indigo: tBranding("indigo"),
+    violet: tBranding("violet"),
+    teal: tBranding("teal"),
+    emerald: tBranding("emerald"),
+    amber: tBranding("amber"),
+    rose: tBranding("rose"),
+    slate: tBranding("slate"),
+  };
   const router = useRouter();
   const utils = trpc.useUtils();
   const brandingQuery = trpc.settings.brandingGet.useQuery();
@@ -84,18 +94,18 @@ export function BrandingSettings() {
     setNotice(null);
     if (!file) return;
     if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
-      setError("Допустимы PNG, JPEG или WebP");
+      setError(tBranding("invalidType"));
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      setError("Исходный файл больше 10 МБ");
+      setError(tBranding("fileTooLarge"));
       return;
     }
     setUploading(true);
     try {
       const png = await normalizeLogo(file);
       if (png.size > 2 * 1024 * 1024) {
-        setError("После уменьшения PNG больше 2 МБ — выберите изображение проще");
+        setError(tBranding("compressedTooLarge"));
         return;
       }
       const body = new FormData();
@@ -106,8 +116,8 @@ export function BrandingSettings() {
         width?: number;
         height?: number;
       };
-      if (!response.ok) throw new Error(payload.error ?? "Не удалось загрузить логотип");
-      await refreshBranding(`Логотип сохранён: ${payload.width}×${payload.height} px`);
+      if (!response.ok) throw new Error(payload.error ?? tBranding("uploadFailed"));
+      await refreshBranding(tBranding("logoUploadedSize", { width: payload.width ?? 0, height: payload.height ?? 0 }));
     } catch (uploadError) {
       setError(errorText(uploadError));
     } finally {
@@ -117,13 +127,13 @@ export function BrandingSettings() {
   }
 
   async function removeLogo() {
-    if (!window.confirm("Удалить логотип отеля?")) return;
+    if (!window.confirm(tBranding("deleteConfirm"))) return;
     setError(null);
     try {
       const response = await fetch("/api/admin/branding/logo", { method: "DELETE" });
       if (!response.ok) {
         const payload = (await response.json().catch(() => ({}))) as { error?: string };
-        throw new Error(payload.error ?? "Не удалось удалить логотип");
+        throw new Error(payload.error ?? tBranding("deleteFailed"));
       }
       await refreshBranding(tBranding("logoDeleted"));
     } catch (removeError) {
@@ -151,9 +161,9 @@ export function BrandingSettings() {
     setNotice(null);
     try {
       const hex = normalizeHex(accentHex);
-      if (!hex) throw new Error("Цвет должен быть в формате #RRGGBB");
+      if (!hex) throw new Error(tBranding("invalidColor"));
       if (contrastWithWhite(hex) < 4.5) {
-        throw new Error("Цвет слишком светлый для белого текста — выберите темнее");
+        throw new Error(tBranding("tooLight"));
       }
       await setAccent.mutateAsync({ hex });
       await refreshBranding(tBranding("accentSaved"));
@@ -177,7 +187,7 @@ export function BrandingSettings() {
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={branding.logoUrl}
-                alt="Логотип отеля"
+                alt={tBranding("logoAlt")}
                 className="max-h-full max-w-full object-contain"
               />
             ) : (
@@ -209,7 +219,7 @@ export function BrandingSettings() {
               </Button>
               {branding?.logoUrl ? (
                 <Button variant="outline" onClick={removeLogo}>
-                  Удалить
+                  {tBranding("delete")}
                 </Button>
               ) : null}
             </div>
@@ -229,8 +239,8 @@ export function BrandingSettings() {
               <button
                 key={color.id}
                 type="button"
-                title={color.label}
-                aria-label={`Цвет: ${color.label}`}
+                title={colorLabels[color.id] ?? color.label}
+                aria-label={tBranding("colorAria", { color: colorLabels[color.id] ?? color.label })}
                 aria-pressed={accentHex === color.hex}
                 onClick={() => setAccentHex(color.hex)}
                 className={

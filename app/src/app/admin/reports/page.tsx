@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -9,27 +10,27 @@ import { hasPermission } from "@/lib/rbac";
 import { getShowDates } from "@/lib/settings";
 import { DataTable } from "@/components/ui/data-table";
 
-const TYPE_LABELS: Record<string, string> = {
-  RECEIVE: "Приёмка",
-  DISTRIBUTE: "Раздача",
-  RETURN: "Возврат",
-  WRITE_OFF: "Списание",
-  AUDIT: "Инвентаризация",
+const TYPE_KEYS: Record<string, string> = {
+  RECEIVE: "typeReceive",
+  DISTRIBUTE: "typeDistribute",
+  RETURN: "typeReturn",
+  WRITE_OFF: "typeWriteoff",
+  AUDIT: "typeAudit",
 };
 
 const TABS = [
-  { key: "stock", label: "Остатки склада" },
-  { key: "movements", label: "Движения" },
-  { key: "low", label: "Низкий остаток" },
-  { key: "no-price", label: "Без цены" },
+  { key: "stock", labelKey: "tabStock" },
+  { key: "movements", labelKey: "tabMovements" },
+  { key: "low", labelKey: "tabLow" },
+  { key: "no-price", labelKey: "tabNoPrice" },
 ];
 
-function formatDate(value: Date): string {
-  return new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" }).format(value);
+function formatDate(value: Date, locale: string): string {
+  return new Intl.DateTimeFormat(locale, { dateStyle: "short", timeStyle: "short" }).format(value);
 }
 
-function formatShortDate(value: Date): string {
-  return new Intl.DateTimeFormat("ru-RU", { dateStyle: "short" }).format(value);
+function formatShortDate(value: Date, locale: string): string {
+  return new Intl.DateTimeFormat(locale, { dateStyle: "short" }).format(value);
 }
 
 function defaultRange(): { from: string; to: string } {
@@ -45,10 +46,11 @@ export default async function ReportsPage({
 }) {
   const user = await getCurrentUser();
   const { locale, currency } = await getUiSettings();
+  const t = await getTranslations({ locale, namespace: "reportsPage" });
   if (!user || !hasPermission(user, "reports.view")) {
     return (
       <p role="alert" className="text-sm text-destructive">
-        Нет права на отчёты.
+        {t("noPermission")}
       </p>
     );
   }
@@ -63,11 +65,8 @@ export default async function ReportsPage({
   return (
     <div className="space-y-4">
       <header>
-        <h1 className="text-2xl font-semibold">Отчёты</h1>
-        <p className="text-sm text-muted-foreground">
-          Остатки и движения с ценой и стоимостью, дефицит по минимальным остаткам,
-          позиции без цены.
-        </p>
+        <h1 className="text-2xl font-semibold">{t("title")}</h1>
+        <p className="text-sm text-muted-foreground">{t("intro")}</p>
       </header>
 
       <nav className="flex flex-wrap gap-2">
@@ -81,14 +80,14 @@ export default async function ReportsPage({
                 : "rounded-md border px-3 py-2 text-sm hover:bg-muted"
             }
           >
-            {tab.label}
+            {t(tab.labelKey as "tabStock" | "tabMovements" | "tabLow" | "tabNoPrice")}
           </Link>
         ))}
         <a
           href={`/api/reports/export?report=${report}&from=${from}&to=${to}`}
           className="rounded-md border border-primary px-3 py-2 text-sm font-medium text-primary hover:bg-muted"
         >
-          Скачать Excel
+          {t("downloadExcel")}
         </a>
       </nav>
 
@@ -104,6 +103,7 @@ export default async function ReportsPage({
 
 async function StockReport({ showDates }: { showDates: boolean }) {
   const { locale, currency } = await getUiSettings();
+  const t = await getTranslations({ locale, namespace: "reportsPage" });
   const money = (value: number) => formatMoney(value, locale, currency);
   const items = await prisma.item.findMany({
     where: { isActive: true },
@@ -119,19 +119,19 @@ async function StockReport({ showDates }: { showDates: boolean }) {
     <Card>
       <CardHeader>
         <CardTitle>
-          Остатки склада ({items.length}) · стоимость {money(totalValue)}
+          {t("stockTitle", { count: items.length, value: money(totalValue) })}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <DataTable minWidth="760px">
           <thead>
             <tr className="border-b text-left text-muted-foreground">
-              <th className="py-2 font-medium">Позиция</th>
-              <th className="py-2 font-medium">Категория</th>
-              <th className="py-2 text-right font-medium">Остаток</th>
-              <th className="py-2 text-right font-medium">Цена</th>
-              <th className="py-2 text-right font-medium">Стоимость</th>
-              {showDates ? <th className="whitespace-nowrap py-2 pl-4 font-medium">Поступление</th> : null}            </tr>
+              <th className="py-2 font-medium">{t("item")}</th>
+              <th className="py-2 font-medium">{t("category")}</th>
+              <th className="py-2 text-right font-medium">{t("stock")}</th>
+              <th className="py-2 text-right font-medium">{t("price")}</th>
+              <th className="py-2 text-right font-medium">{t("value")}</th>
+              {showDates ? <th className="whitespace-nowrap py-2 pl-4 font-medium">{t("receipt")}</th> : null}            </tr>
           </thead>
           <tbody>
             {items.map((item) => {
@@ -154,7 +154,7 @@ async function StockReport({ showDates }: { showDates: boolean }) {
                   {showDates ? (
                     <td className="whitespace-nowrap py-2 pl-4 text-muted-foreground">
                       {item.warehouse?.lastReceiptAt
-                        ? formatShortDate(item.warehouse.lastReceiptAt)
+                        ? formatShortDate(item.warehouse.lastReceiptAt, locale)
                         : "—"}
                     </td>
                   ) : null}
@@ -178,6 +178,7 @@ async function MovementsReport({
   showDates: boolean;
 }) {
   const { locale, currency } = await getUiSettings();
+  const t = await getTranslations({ locale, namespace: "reportsPage" });
   const money = (value: number) => formatMoney(value, locale, currency);
   const fromDate = new Date(`${from}T00:00:00`);
   const toDate = new Date(`${to}T23:59:59`);
@@ -198,51 +199,51 @@ async function MovementsReport({
       <form method="get" className="flex flex-wrap items-end gap-3">
         <input type="hidden" name="report" value="movements" />
         <label className="text-sm">
-          <span className="mb-1 block text-muted-foreground">С даты</span>
+          <span className="mb-1 block text-muted-foreground">{t("from")}</span>
           <input type="date" name="from" defaultValue={from} className="h-10 rounded-md border bg-background px-3" />
         </label>
         <label className="text-sm">
-          <span className="mb-1 block text-muted-foreground">По дату</span>
+          <span className="mb-1 block text-muted-foreground">{t("to")}</span>
           <input type="date" name="to" defaultValue={to} className="h-10 rounded-md border bg-background px-3" />
         </label>
         <button type="submit" className="h-10 rounded-md bg-primary px-4 text-sm text-primary-foreground">
-          Показать
+          {t("show")}
         </button>
       </form>
 
       <Card>
         <CardHeader>
           <CardTitle>
-            Движения по дате документа {from} — {to} ({operations.length})
+            {t("movementsTitle", { from, to, count: operations.length })}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {operations.length === 0 ? (
-            <p className="text-sm text-muted-foreground">За период операций нет.</p>
+            <p className="text-sm text-muted-foreground">{t("noOps")}</p>
           ) : (
             <DataTable minWidth="760px">
               <thead>
                 <tr className="border-b text-left text-muted-foreground">
-                  {showDates ? <th className="py-2 font-medium">Дата</th> : null}
-                  <th className="py-2 font-medium">Операция</th>
-                  <th className="py-2 font-medium">Номер</th>
-                  <th className="py-2 font-medium">Позиции</th>
-                  <th className="py-2 font-medium">Автор</th>
+                  {showDates ? <th className="py-2 font-medium">{t("date")}</th> : null}
+                  <th className="py-2 font-medium">{t("operation")}</th>
+                  <th className="py-2 font-medium">{t("room")}</th>
+                  <th className="py-2 font-medium">{t("items")}</th>
+                  <th className="py-2 font-medium">{t("author")}</th>
                 </tr>
               </thead>
               <tbody>
                 {operations.map((operation) => (
                   <tr key={operation.id} className="border-b align-top last:border-0">
                     {showDates ? (
-                      <td className="py-2 whitespace-nowrap">{formatShortDate(operation.documentDate)}</td>
+                      <td className="py-2 whitespace-nowrap">{formatShortDate(operation.documentDate, locale)}</td>
                     ) : null}
                     <td className="py-2">
-                      {TYPE_LABELS[operation.type] ?? operation.type}
+                      {t(TYPE_KEYS[operation.type] as never)}
                       {operation.reason ? (
                         <span className="block text-xs text-muted-foreground">{operation.reason}</span>
                       ) : null}
                     </td>
-                    <td className="py-2">{operation.room?.number ?? "склад"}</td>
+                    <td className="py-2">{operation.room?.number ?? t("warehouse")}</td>
                     <td className="py-2">
                       {operation.items.map((line) => (
                         <span key={line.id} className="block">
@@ -269,6 +270,7 @@ async function MovementsReport({
 
 async function LowStockReport({ showDates }: { showDates: boolean }) {
   const { locale, currency } = await getUiSettings();
+  const t = await getTranslations({ locale, namespace: "reportsPage" });
   const money = (value: number) => formatMoney(value, locale, currency);
   const [rooms, inventory, rules] = await Promise.all([
     prisma.room.findMany({ where: { isActive: true }, include: { roomType: true } }),
@@ -311,24 +313,24 @@ async function LowStockReport({ showDates }: { showDates: boolean }) {
     <Card>
       <CardHeader>
         <CardTitle>
-          Дефицит в номерах ({issues.length}) · стоимость {money(totalValue)}
+          {t("lowTitle", { count: issues.length, value: money(totalValue) })}
         </CardTitle>
       </CardHeader>
       <CardContent>
         {issues.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Дефицита нет — все остатки не ниже минимума.</p>
+          <p className="text-sm text-muted-foreground">{t("noLow")}</p>
         ) : (
           <DataTable minWidth="760px">
             <thead>
               <tr className="border-b text-left text-muted-foreground">
-                <th className="py-2 font-medium">Номер</th>
-                <th className="py-2 font-medium">Позиция</th>
-                <th className="py-2 text-right font-medium">Есть</th>
-                <th className="py-2 text-right font-medium">Минимум</th>
-                <th className="py-2 text-right font-medium">Не хватает</th>
-                <th className="py-2 text-right font-medium">Цена</th>
-                <th className="py-2 text-right font-medium">Стоимость</th>
-                {showDates ? <th className="py-2 font-medium">Поступление</th> : null}
+                <th className="py-2 font-medium">{t("room")}</th>
+                <th className="py-2 font-medium">{t("item")}</th>
+                <th className="py-2 text-right font-medium">{t("have")}</th>
+                <th className="py-2 text-right font-medium">{t("min")}</th>
+                <th className="py-2 text-right font-medium">{t("missing")}</th>
+                <th className="py-2 text-right font-medium">{t("price")}</th>
+                <th className="py-2 text-right font-medium">{t("value")}</th>
+                {showDates ? <th className="py-2 font-medium">{t("receipt")}</th> : null}
               </tr>
             </thead>
             <tbody>
@@ -348,7 +350,7 @@ async function LowStockReport({ showDates }: { showDates: boolean }) {
                   {showDates ? (
                     <td className="py-2 whitespace-nowrap text-muted-foreground">
                       {lastReceipt.get(issue.itemId)
-                        ? formatShortDate(lastReceipt.get(issue.itemId)!)
+                        ? formatShortDate(lastReceipt.get(issue.itemId)!, locale)
                         : "—"}
                     </td>
                   ) : null}
@@ -363,6 +365,8 @@ async function LowStockReport({ showDates }: { showDates: boolean }) {
 }
 
 async function NoPriceReport() {
+  const { locale } = await getUiSettings();
+  const t = await getTranslations({ locale, namespace: "reportsPage" });
   const items = await prisma.item.findMany({
     where: { isActive: true, priceKopecks: 0 },
     include: { category: true, warehouse: true },
@@ -372,18 +376,18 @@ async function NoPriceReport() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Позиции без цены ({items.length})</CardTitle>
+        <CardTitle>{t("noPriceTitle", { count: items.length })}</CardTitle>
       </CardHeader>
       <CardContent>
         {items.length === 0 ? (
-          <p className="text-sm text-muted-foreground">У всех активных позиций задана цена.</p>
+          <p className="text-sm text-muted-foreground">{t("noPriceEmpty")}</p>
         ) : (
           <DataTable minWidth="760px">
             <thead>
               <tr className="border-b text-left text-muted-foreground">
-                <th className="py-2 font-medium">Позиция</th>
-                <th className="py-2 font-medium">Категория</th>
-                <th className="py-2 text-right font-medium">Остаток</th>
+                <th className="py-2 font-medium">{t("item")}</th>
+                <th className="py-2 font-medium">{t("category")}</th>
+                <th className="py-2 text-right font-medium">{t("stock")}</th>
               </tr>
             </thead>
             <tbody>
