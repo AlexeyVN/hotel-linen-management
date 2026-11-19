@@ -149,6 +149,7 @@ The client secret is: <client_secret>
 
 ## 10. Ссылки
 
+- [Handoff 2026-11-19](HANDOFF-2026-11-19.md)
 - [План Apaleo](plans/apaleo-connector.md)
 - [Stage 0.5 результат](plans/apaleo-spike.md)
 - [Планы этапов](plans/README.md)
