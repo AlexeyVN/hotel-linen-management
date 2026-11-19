@@ -10,6 +10,9 @@ Performance baseline: synthetic 10/50/100-room tests, 2026-11-19.
 
 This is the acceptance frame for all plans below. No cloud dependency, no mandatory AI, no marketplace, no multi-tenant SaaS in the first iteration.
 
+- Six built-in languages: **English default**, Russian, Italian, Spanish, German, French.
+- Apaleo is the single optional PMS connector; 1C/Excel remain for Russia.
+
 ## Plans
 
 | Stage | Plan | Purpose |

@@ -1,6 +1,6 @@
 # Apaleo connector plan — for approval
 
-Status: **pending final approval**  
+Status: **Stage 0.5 attempted — blocked by Apaleo `invalid_client`**  
 Supersedes: `stage-0-mews-next.md` (Mews rejected)  
 Product frame: **reliable local product + personal language + one Apaleo connector on request**.
 
@@ -13,8 +13,11 @@ Product frame: **reliable local product + personal language + one Apaleo connect
 - **No public API key** for Apaleo.
 - User provides **Apaleo property_id** and permission to create a client.
 - Budget confirmed: **€100 / 5,000 RUB per one-time connector**.
+- Default language for everyone: **English**; six built-in locales tested for admin and maids.
+- Apaleo credentials file: `id_client_apaleo.txt` in the project root.
+- Current Stage 0.5 result: **blocked** — token endpoint returned `400 invalid_client`; no token obtained.
 
-These decisions are recorded; implementation still requires the credential spike and final approval of the work sequence.
+These decisions are recorded; implementation still requires valid credentials and final approval of the work sequence.
 
 ## 0.1 Fixed product decisions
 
@@ -36,12 +39,33 @@ en (default) → ru → it → es → de → fr
 ```
 
 - New installation default: **English**.
-- Existing installation keeps its current saved locale until changed.
+- Existing installation: **explicit saved locale may remain**, but the default for unset users and all new installations is English.
 - Fallback: requested user locale → English → key.
 - All six catalogs must have the same key/placeholder set.
 - `es-MX` is a later optional pack; it is not a seventh built-in.
 - Admin: German; maids: Italian/Spanish; English is the default and fallback.
-- Tests must cover all six locales; the old fixed five-locale assertion must be generalized.
+- Tests: **6 locales × admin + maid** (12 role/locale scenarios), plus fallback/placeholder checks.
+- The old fixed five-locale assertion must be generalized.
+
+### Credential file
+
+`id_client_apaleo.txt` in the project root is the local credential source:
+
+```text
+The client id is: <client_id>
+The client secret is: <client_secret>
+```
+
+Rules:
+
+- add it to `.gitignore`; never commit;
+- never include it in archive/checkpoint;
+- parse only server-side;
+- never log/print the secret;
+- optional `.env` values can override the file;
+- `property_id` is not in the current file; obtain it via API after token success.
+
+The file currently exists and is ignored by Git, but its credentials are rejected by Apaleo (`invalid_client`).
 
 ### Device baseline
 
@@ -211,6 +235,25 @@ No UI integration yet.
 6. Confirm rate limits, pagination, error envelope, version prefix.
 7. Confirm that the app is not required to be in the Apaleo Store for a private custom client.
 8. Confirm device/OS inventory for old iPads/tablets.
+
+### Current Stage 0.5 result (2026-11-19)
+
+**BLOCKED.**
+
+- Credential file exists and is gitignored.
+- Token request to `https://identity.apaleo.com/connect/token` with `grant_type=client_credentials` returned:
+  - HTTP **400**
+  - body: `{"error":"invalid_client"}`
+- No access token was issued; property/units/housekeeping reads could not be performed.
+- No secret/token was written to logs or the repository.
+- Likely causes: expired/revoked client secret, wrong client type (not simple/custom), client not active, or copied credentials do not belong to the current Apaleo account.
+
+**Required before continuing:**
+1. Re-check the custom app is **Simple client** (not a connect client).
+2. Regenerate a new client secret in Apaleo.
+3. Update `id_client_apaleo.txt` locally (do not send it in chat).
+4. Confirm the app is active and has the selected property.
+5. Re-run the token test.
 
 **Stop rule:** if the hotel cannot create a client or the needed housekeeping permissions are unavailable, do not build the connector.
 
