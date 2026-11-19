@@ -1,6 +1,6 @@
 # Apaleo connector plan — for approval
 
-Status: **Stage 0.5 attempted — blocked by Apaleo `invalid_client`**  
+Status: **Stage 0.5 read-only PASS — write test and next stages await approval**  
 Supersedes: `stage-0-mews-next.md` (Mews rejected)  
 Product frame: **reliable local product + personal language + one Apaleo connector on request**.
 
@@ -9,15 +9,17 @@ Product frame: **reliable local product + personal language + one Apaleo connect
 - Apaleo **simple client + client credentials**, one property.
 - **Fine-grained minimal permissions**, without reservations/rates/folios.
 - **Polling first**; webhooks only with a public HTTPS endpoint.
-- Secrets in **env**, not in DB/UI.
+- Secrets in **env**/local `id_client_apaleo.txt`, not in DB/UI.
 - **No public API key** for Apaleo.
 - User provides **Apaleo property_id** and permission to create a client.
 - Budget confirmed: **€100 / 5,000 RUB per one-time connector**.
-- Default language for everyone: **English**; six built-in locales tested for admin and maids.
+- **Initial installation language is English for both admin and maids**; each can change it personally afterwards.
+- Six built-in locales; tests for admin and maids on all six.
 - Apaleo credentials file: `id_client_apaleo.txt` in the project root.
-- Current Stage 0.5 result: **blocked** — token endpoint returned `400 invalid_client`; no token obtained.
+- Stage 0.5 read-only result: **PASS** — token, property `LND`, 51 units, and `unit.status.condition` confirmed.
+- No Apaleo write has been performed.
 
-These decisions are recorded; implementation still requires valid credentials and final approval of the work sequence.
+These decisions are recorded; write verification and next stages require explicit approval.
 
 ## 0.1 Fixed product decisions
 
@@ -26,8 +28,8 @@ These decisions are recorded; implementation still requires valid credentials an
 | Europe PMS | **Apaleo only**; optional connector in the build |
 | Russia | **1C + Excel**; no Apaleo dependency |
 | Internet | Intermittent; local core authoritative; sync is queued |
-| Languages | **6 built-in**: English (default), Russian, Italian, Spanish, German, French |
-| Staff languages | Admin **de**, maids **it/es**; en/ru/fr also available |
+| Languages | **6 built-in**: English (initial default for admin and maids), Russian, Italian, Spanish, German, French |
+| Staff languages | **Initial: English for admin and maids**; each can switch personally to de/it/es/ru/fr |
 | Devices | iPhone, Android 9+, iPad 7th generation+, Android tablets |
 | Price | **€100 / 5,000 RUB** per integration; no marketplace/certification budget |
 | Auth | Apaleo OAuth2 **client credentials** via a simple/custom client for one hotel |
@@ -238,22 +240,46 @@ No UI integration yet.
 
 ### Current Stage 0.5 result (2026-11-19)
 
-**BLOCKED.**
+**READ-ONLY PASS.**
 
-- Credential file exists and is gitignored.
-- Token request to `https://identity.apaleo.com/connect/token` with `grant_type=client_credentials` returned:
-  - HTTP **400**
-  - body: `{"error":"invalid_client"}`
-- No access token was issued; property/units/housekeeping reads could not be performed.
-- No secret/token was written to logs or the repository.
-- Likely causes: expired/revoked client secret, wrong client type (not simple/custom), client not active, or copied credentials do not belong to the current Apaleo account.
+- Credential file exists and is gitignored; no secret printed.
+- Token request succeeded:
+  - `token_type=Bearer`
+  - `expires_in=3600`
+  - `scope=identity:permissions` (fine-grained client)
+- `GET /inventory/v1/properties` returned:
+  - property `id=LND`, name `Hotel London`, status `Test`.
+- `GET /inventory/v1/units?propertyId=LND` returned **51 units**.
+- There is **no separate `housekeeping` object**. The housekeeping condition is inside:
 
-**Required before continuing:**
-1. Re-check the custom app is **Simple client** (not a connect client).
-2. Regenerate a new client secret in Apaleo.
-3. Update `id_client_apaleo.txt` locally (do not send it in chat).
-4. Confirm the app is active and has the selected property.
-5. Re-run the token test.
+```json
+{
+  "status": {
+    "isOccupied": false,
+    "condition": "Clean"
+  }
+}
+```
+
+- Allowed condition values from Apaleo `UnitStatusModel`:
+  - `Clean`
+  - `CleanToBeInspected`
+  - `Dirty`
+- Out-of-order/maintenance is a separate `status.maintenance` / resource-block concept.
+- Read-only `GET` works for properties and units.
+
+### Update endpoint (not exercised)
+
+- `PATCH /inventory/v1/units/{id}` accepts **JSON Patch** operations.
+- Relevant permission: `core.units.status.condition.modify` (or broader `core.units.modify`).
+- 405 response confirms allowed methods include `PATCH`.
+- Exact JSON Patch path/value must be verified with a **same-value no-op test** on the test property before any real status change.
+
+**No write has been performed. A same-value no-op PATCH requires explicit approval.**
+
+### Important limitation
+
+Property `LND` has status **Test**, not production. A real hotel property ID must be provided before production use.
 
 **Stop rule:** if the hotel cannot create a client or the needed housekeeping permissions are unavailable, do not build the connector.
 
@@ -268,9 +294,10 @@ No UI integration yet.
 
 ### Language
 
-- Built-in six: **English (default), Russian, Italian, Spanish, German, French**.
-- Admin **de**.
-- Maids **it**, **es**.
+- Built-in six: **English (initial default), Russian, Italian, Spanish, German, French**.
+- **On first installation, both admin and maids start in English.**
+- After login, each user can change language personally; the choice is stored in `User.locale`.
+- Example target preferences after setup: admin **de**, maids **it/es**; en/ru/fr also available.
 - English is the installation default and fallback.
 - `User.locale` migration:
   ```text
@@ -279,7 +306,8 @@ No UI integration yet.
 - Mobile `/m/more` language selector.
 - `es-MX` initially maps to `es`; custom `es-MX` pack later only if needed.
 - No admin translation uploader yet — built-in six covers the pilot.
-- Add `fr` catalog with full key/placeholder parity; tests for all six locales.
+- Add `fr` catalog with full key/placeholder parity.
+- Tests: **6 locales × admin + maid** (12 role/locale scenarios), plus fallback/placeholder checks.
 
 ### Devices
 
@@ -328,6 +356,13 @@ Check login, tasks, room status, QR scan, offline queue, PWA install.
 4. Push:
    - local status changes → Apaleo unit update;
    - only status; no rates/reservations/folios.
+   - condition mapping:
+     | Local | Apaleo `status.condition` |
+     |---|---|
+     | CLEAN | `Clean` |
+     | DIRTY | `Dirty` |
+     | INSPECTED | `CleanToBeInspected` |
+     | OUT_OF_ORDER | **not in v1** — separate maintenance/block; do not write as condition |
 5. Sync:
    - every 5–15 min or on demand;
    - polling first;
@@ -393,20 +428,25 @@ If Apaleo requires marketplace certification for the desired capabilities, stop 
 
 - Token obtained via client credentials; expires/refresh tested.
 - Apaleo property/units read; local rooms mapped.
+- `status.condition` mapping verified; no separate housekeeping field assumed.
 - Local status update reaches Apaleo; read-back matches.
 - Internet loss → status queued → reconnect → delivered.
 - 401/403/429 handled; no token/secret in logs.
 - Local app fully works with connector disabled/offline.
-- Admin de + maids it/es simultaneously.
-- Old iPad/Android baseline documented.
+- Initial install: **English for admin and maids**.
+- All six locales tested for admin and maids.
+- Old iPad 7 / Android 9 baseline documented.
 - 100-room performance targets pass.
 
 ## 8. Approval questions
 
-1. Approve **simple client + client credentials**, one property.
-2. Approve **fine-grained minimal permissions** (no reservations/rates/folios).
-3. Approve **polling first**, webhooks only with public HTTPS.
-4. Approve env-based client secret for v1 (no credentials in DB/UI).
-5. Provide/confirm Apaleo property ID and permission to create a custom client.
-6. Confirm exact old iPad/Android versions for the device gate.
-7. Approve that no public API key/generic API is built for Apaleo.
+1. Approve one **same-value no-op PATCH** on a single `LND` test unit to verify JSON Patch (`status.condition` remains `Clean`).
+2. Approve **Stage 1**: six locales, initial English for admin and maids, per-user switching, device baseline, performance fixes.
+3. Approve **Stage 2**: Apaleo connector MVP with `status.condition` mapping; no out-of-order write in v1.
+4. Keep **simple client + client credentials**, one property.
+5. Keep **fine-grained minimal permissions** (no reservations/rates/folios).
+6. Keep **polling first**, webhooks only with public HTTPS.
+7. Keep secrets in env/`id_client_apaleo.txt`, not DB/UI.
+8. Confirm whether `LND` is the intended test property and provide the production `property_id` later.
+9. Confirm old iPad 7 / Android 9 devices are available for testing.
+10. Keep **no public API key/generic API** for Apaleo.

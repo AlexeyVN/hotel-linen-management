@@ -4,7 +4,7 @@
 Версия: **2.3.6**  
 Репозиторий: <https://github.com/AlexeyVN/hotel-linen-management>  
 Production: `https://hotel`  
-Текущая установка: ru / RUB (новый дефолт — English)
+Текущая установка: ru / RUB (текущее явное значение); при первой установке язык интерфейса администратора и горничных — **English**.
 
 ## 1. Что это
 
@@ -34,9 +34,10 @@ Production: `https://hotel`
 en (default) → ru → it → es → de → fr
 ```
 
-- Администратор: **de**.
-- Горничные: **it**, **es**.
-- English — fallback и дефолт новых установок.
+- **При первой установке и у администратора, и у горничных язык — English.**
+- После входа каждый пользователь может выбрать свой язык; выбор хранится в `User.locale`.
+- Пример предпочтений после настройки: администратор **de**, горничные **it/es**.
+- English — fallback и дефолт для новых пользователей без явного выбора.
 - Существующая установка может сохранять явно выбранный locale.
 - Тесты: **6 языков для администратора и горничных** (12 role/locale сценариев), плюс placeholders/fallback.
 - `es-MX` — возможный отдельный pack позже.
@@ -100,17 +101,25 @@ The client secret is: <client_secret>
 
 ## 7. Stage 0.5 — текущий статус
 
-**BLOCKED.**
+**READ-ONLY PASS.**
 
-- Токен-запрос к `https://identity.apaleo.com/connect/token` вернул:
-  ```text
-  HTTP 400
-  {"error":"invalid_client"}
+- Токен получен: `Bearer`, `expires_in=3600`, fine-grained (`scope=identity:permissions`).
+- Property: `LND` («Hotel London»), статус **Test**, 51 unit.
+- Отдельного `housekeeping`-объекта нет. Поле условия:
+  ```json
+  { "status": { "isOccupied": false, "condition": "Clean" } }
   ```
-- Токен не получен; property/units не читались.
-- Секреты не выведены в отчёт и не попали в git.
-- Нужно: пересоздать secret у simple/custom client, обновить `id_client_apaleo.txt`, проверить active/property.
-- После исправления — повторить Stage 0.5; только потом согласовывать Stage 1/2.
+- Допустимые значения `status.condition`:
+  ```text
+  Clean
+  CleanToBeInspected
+  Dirty
+  ```
+- Обновление: `PATCH /inventory/v1/units/{id}` (JSON Patch), permission
+  `core.units.status.condition.modify` или `core.units.modify`.
+- Запись **не выполнялась**. Нужно отдельное разрешение на no-op PATCH.
+- `LND` — тестовый отель; для production нужен реальный `property_id`.
+- Секреты не попали в git/архив.
 
 Подробно: [docs/plans/apaleo-spike.md](plans/apaleo-spike.md).
 
@@ -118,9 +127,9 @@ The client secret is: <client_secret>
 
 | Этап | Содержание |
 |---|---|
-| Stage 0.5 | Apaleo token/property/units/housekeeping discovery; сейчас blocked |
-| Stage 1 | 6 языков, per-user locale, device baseline, performance fixes |
-| Stage 2 | Apaleo connector MVP: pull/push status, polling, outbox, UI |
+| Stage 0.5 | Apaleo token/property/units/condition discovery; **read-only pass** |
+| Stage 1 | 6 языков, English при первой установке, per-user locale, device baseline, performance fixes |
+| Stage 2 | Apaleo connector MVP: pull/push `status.condition`, polling, outbox, UI |
 | Stage 3 | acceptance, e2e, device tests, release |
 | Later | dependency evaluation, custom `es-MX`, optional webhooks |
 
