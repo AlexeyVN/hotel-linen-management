@@ -1,6 +1,8 @@
 # Stage 0 decisions → next steps for approval
 
-Status: **pending approval**  
+> **Superseded:** Mews was rejected in favor of Apaleo. See [apaleo-connector.md](apaleo-connector.md). This file is kept for decision history only.
+
+Status: **superseded**  
 Input: hotel profile from Stage 0 (Europe/Mews, intermittent internet, German admin, Italian/Mexican maids, phones/tablets, low integration budget).
 
 ## 0. Fixed decisions
