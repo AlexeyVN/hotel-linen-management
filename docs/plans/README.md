@@ -15,6 +15,7 @@ This is the acceptance frame for all plans below. No cloud dependency, no mandat
 | Stage | Plan | Purpose |
 |---|---|---|
 | 0–1 | [stage-0-1.md](stage-0-1.md) | Demand validation and per-user/per-device locale |
+| 0–2 | [stage-0-mews-next.md](stage-0-mews-next.md) | Mews feasibility, device baseline, Mews housekeeping MVP |
 | 2 | [minimal-refactor.md](minimal-refactor.md) | Minimal refactor, performance fixes, no full application layer |
 | 3 | [api-pilot.md](api-pilot.md) | 2–3 endpoints + API key, no OAuth2/marketplace |
 | 4 | [translation-packs.md](translation-packs.md) | Admin-uploaded translation files, phase 1 |
