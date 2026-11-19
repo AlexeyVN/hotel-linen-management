@@ -54,6 +54,8 @@ en (default) → ru → it → es → de → fr
 
 Проверить реальные iPad 7 и Android 9: login, задачи, QR, offline queue, PWA. Не обещать поддержку более старых устройств без теста.
 
+Тестовое окружение: [docs/TESTING-ENV.md](TESTING-ENV.md) — Android 9 emulator установлен и проверен; iPhone/iPad — WebKit-эмуляция, нативного iOS Simulator на Windows нет.
+
 ## 5. Производительность
 
 Замеры 100 комнат:
