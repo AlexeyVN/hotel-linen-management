@@ -83,7 +83,7 @@ locale =
 - Admin: profile/settings language selector → personal locale.
 - Admin: installation default language selector → ADMIN only.
 - Mobile `/m/more`: language selector for maid; no admin permission required.
-- Language list: built-in 5 first; custom packs only after Stage 4.
+- Language list: built-in 6 first (English default); custom packs only after Stage 4.
 - Changing language must not log the user out and must not change other users.
 
 ### Tests

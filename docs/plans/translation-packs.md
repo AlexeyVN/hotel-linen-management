@@ -127,7 +127,7 @@ ADMIN UI shows:
 - Activate/deactivate/delete; fallback after delete.
 - Admin ru + maid custom locale concurrently.
 - Mobile offline uses cached pack.
-- Existing 5-locale test updated to built-in + custom, not fixed list.
+- Existing six-locale test updated to built-in + custom, not fixed list.
 - Backup/restore includes pack.
 
 ## Acceptance

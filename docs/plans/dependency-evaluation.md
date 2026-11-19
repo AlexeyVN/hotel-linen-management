@@ -33,7 +33,7 @@ Goal: decide upgrades with evidence, not merge Dependabot blindly.
    - Branch `chore/dep-<name>`; copy SQLite; no production migration.
    - Apply codemod; fix types; run tests/build/e2e.
 8. **Validation**
-   - 103+ tests; build; 5 locales; API contract (if implemented); mobile offline; backup/restore.
+   - 103+ tests; build; 6 locales; API contract (if implemented); mobile offline; backup/restore.
    - Compare performance baseline.
 9. **Decision**
    - Adopt / defer / reject with evidence.

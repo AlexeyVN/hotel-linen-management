@@ -1,20 +1,58 @@
 # Apaleo connector plan — for approval
 
-Status: **pending approval**  
+Status: **pending final approval**  
 Supersedes: `stage-0-mews-next.md` (Mews rejected)  
 Product frame: **reliable local product + personal language + one Apaleo connector on request**.
 
-## 0. Fixed decisions
+## 0. Confirmed decisions (user, 2026-11-19)
+
+- Apaleo **simple client + client credentials**, one property.
+- **Fine-grained minimal permissions**, without reservations/rates/folios.
+- **Polling first**; webhooks only with a public HTTPS endpoint.
+- Secrets in **env**, not in DB/UI.
+- **No public API key** for Apaleo.
+- User provides **Apaleo property_id** and permission to create a client.
+- Budget confirmed: **€100 / 5,000 RUB per one-time connector**.
+
+These decisions are recorded; implementation still requires the credential spike and final approval of the work sequence.
+
+## 0.1 Fixed product decisions
 
 | Area | Decision |
 |---|---|
 | Europe PMS | **Apaleo only**; optional connector in the build |
 | Russia | **1C + Excel**; no Apaleo dependency |
 | Internet | Intermittent; local core authoritative; sync is queued |
-| Languages | Admin **de**, maids **it/es**; `es-MX` optional later |
-| Devices | iPhone, Android phones, old iPads, Android tablets |
-| Price | ~€100 / 5,000 RUB per integration; no marketplace/certification budget |
+| Languages | **6 built-in**: English (default), Russian, Italian, Spanish, German, French |
+| Staff languages | Admin **de**, maids **it/es**; en/ru/fr also available |
+| Devices | iPhone, Android 9+, iPad 7th generation+, Android tablets |
+| Price | **€100 / 5,000 RUB** per integration; no marketplace/certification budget |
 | Auth | Apaleo OAuth2 **client credentials** via a simple/custom client for one hotel |
+
+### Language order and defaults
+
+```text
+en (default) → ru → it → es → de → fr
+```
+
+- New installation default: **English**.
+- Existing installation keeps its current saved locale until changed.
+- Fallback: requested user locale → English → key.
+- All six catalogs must have the same key/placeholder set.
+- `es-MX` is a later optional pack; it is not a seventh built-in.
+- Admin: German; maids: Italian/Spanish; English is the default and fallback.
+- Tests must cover all six locales; the old fixed five-locale assertion must be generalized.
+
+### Device baseline
+
+| Device | Minimum |
+|---|---|
+| Android phone/tablet | **Android 9 (API 28)** |
+| Apple iPad | **iPad 7th generation** (iPadOS 15) |
+| iPhone | iOS 15+ (test current Safari) |
+| Browser | current Chrome/Safari; no promise for older WebViews |
+
+Test actual old iPad 7 and Android 9 devices; if the modern Next/React bundle is not usable, document the minimum OS and fallback. Do not claim universal old-device support.
 
 ## 1. Why Apaleo and which client type
 
@@ -43,17 +81,121 @@ Why not connect/authorization-code now:
 
 If the hotel later wants multiple properties, the app must move to a connect client + authorization code; that is a separate project.
 
-### Registration
+### Registration and key guide (Apaleo)
 
-1. Apaleo developer account (already registered).
-2. Create **simple client**.
-3. Choose **fine-grained client** if available; grant only:
-   - property inventory read;
-   - unit/housekeeping status read/write;
-   - no rates, reservations, folios, payments, company data.
-4. Select only the pilot property.
-5. Copy `client_id`, `client_secret`, `property_id` through a secure channel.
-6. Test token + `403` behavior with a property the client cannot access.
+Official flow: [Register an OAuth simple client (custom) app](https://apaleo.dev/guides/oauth-connection/register-simple-client-app.html). Only an account administrator can register an app.
+
+#### 1. Sign in to the Apaleo Dashboard
+
+- Open <https://app.apaleo.com/dashboard>.
+- Use the account where the hotel/property lives.
+- If there is no developer account: <https://identity.apaleo.com/account/register-dev-account>.
+
+#### 2. Create a custom app
+
+1. Go to **Apps → Connected apps**.
+2. Click **Add a new app**.
+3. Select **Add custom app**.
+
+#### 3. Fill the app form
+
+| Field | Value for this connector |
+|---|---|
+| Client code | e.g. `HOTEL_LINEN` — 3–30 letters/numbers/underscores; becomes part of client ID |
+| Client name | e.g. `Hotel linen housekeeping connector` |
+| Personally identifiable information | **Omit all** — housekeeping needs no guest names/contacts |
+| Secrets | description e.g. `production`; create the secret |
+| Client access | **Fine-grained client** (recommended; cannot be changed later) |
+| Permissions | only property/unit/inventory read and unit housekeeping update; see below |
+| Property access | **Only selected properties** → select the pilot hotel |
+
+**Permissions:** exact labels are shown in Apaleo’s UI/Swagger and may change. Select the minimum that covers:
+- read property/unit inventory;
+- read unit housekeeping/condition;
+- update unit housekeeping/condition.
+
+Do **not** select reservations, rates, folios, payments, guest/PII, company, or accounting permissions.
+
+#### 4. Save and copy credentials
+
+After saving, copy:
+
+- **Client ID** (`client_id`);
+- **Client Secret** (`client_secret`) — shown only once; store it safely;
+- the selected **property ID** (see next step).
+
+If the secret is lost or compromised:
+
+- add a **new secret** to the app;
+- update `.env`;
+- delete the old secret after the connector is verified;
+- never send the secret in chat/email.
+
+#### 5. Get `property_id`
+
+With the token from step 6, call the inventory properties endpoint (confirm exact path in Swagger):
+
+```http
+GET https://api.apaleo.com/inventory/v1/properties
+Authorization: Bearer <access_token>
+```
+
+The property `id` is the value for `APALEO_PROPERTY_ID`.  
+If the response contains several properties, select only the pilot hotel; do not use “all properties”.
+
+#### 6. Test token and property
+
+Token request:
+
+```http
+POST https://identity.apaleo.com/connect/token
+Authorization: Basic base64(client_id:client_secret)
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=client_credentials
+```
+
+PowerShell Base64 helper:
+
+```powershell
+$pair = "$clientId`:$clientSecret"
+[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($pair))
+```
+
+Test:
+
+```powershell
+$token = (Invoke-RestMethod -Method Post `
+  -Uri "https://identity.apaleo.com/connect/token" `
+  -Headers @{ Authorization = "Basic $basic" } `
+  -ContentType "application/x-www-form-urlencoded" `
+  -Body "grant_type=client_credentials").access_token
+
+Invoke-RestMethod -Uri "https://api.apaleo.com/inventory/v1/properties" `
+  -Headers @{ Authorization = "Bearer $token" }
+```
+
+Expected:
+- token response has `access_token`, `expires_in`, `token_type=Bearer`;
+- property list succeeds;
+- a property outside the selected access returns `403`.
+
+#### 7. Store in `.env`
+
+```text
+APALEO_CLIENT_ID=...
+APALEO_CLIENT_SECRET=...
+APALEO_PROPERTY_ID=...
+```
+
+Never commit `.env`; never store the secret in SQLite or return it to the browser. For v1, UI only enables/disables and tests the connector.
+
+#### 8. Later rotation
+
+- Add a new secret in Apaleo.
+- Update `.env` and restart the app.
+- Verify token + property.
+- Delete the old secret.
 
 Exact Core API paths and the housekeeping status field must be confirmed from Apaleo Swagger (`https://api.apaleo.com/swagger/index.html`) during the credential spike; do not hardcode assumptions before that.
 
@@ -83,30 +225,32 @@ No UI integration yet.
 
 ### Language
 
+- Built-in six: **English (default), Russian, Italian, Spanish, German, French**.
 - Admin **de**.
 - Maids **it**, **es**.
-- Installation default can be German.
+- English is the installation default and fallback.
 - `User.locale` migration:
   ```text
   user.locale > NEXT_LOCALE > installation default > env > "en"
   ```
 - Mobile `/m/more` language selector.
 - `es-MX` initially maps to `es`; custom `es-MX` pack later only if needed.
-- No admin translation uploader yet — built-in de/it/es covers the pilot.
+- No admin translation uploader yet — built-in six covers the pilot.
+- Add `fr` catalog with full key/placeholder parity; tests for all six locales.
 
 ### Devices
 
 Test:
 
-- iPhone Safari;
-- Android Chrome;
-- old iPad Safari;
-- Android tablet;
+- iPhone Safari (iOS 15+);
+- Android 9+ Chrome;
+- iPad 7th generation Safari;
+- Android 9+ tablet;
 - 390, 768, 1024 widths.
 
 Check login, tasks, room status, QR scan, offline queue, PWA install.
 
-**Gate:** collect exact iPadOS/Android versions. If an old iPad cannot run the modern Next/React bundle, set a documented minimum OS or use a supported device. Do not promise universal old-iPad support.
+**Gate:** actual iPad 7 and Android 9 devices must be tested. If an old device cannot run the modern Next/React bundle, set a documented minimum OS or use a supported device. Do not promise universal old-device support.
 
 ### Performance (from 100-room benchmark)
 
@@ -123,9 +267,9 @@ Check login, tasks, room status, QR scan, offline queue, PWA install.
 
 1. `/admin/settings/integrations/apaleo`:
    - enable/disable;
-   - property ID;
-   - client ID;
-   - secret input (see secrets below);
+   - property ID display;
+   - client ID display;
+   - **no secret input** (secret comes from `.env`);
    - “Test connection”;
    - last sync / pending changes.
 2. OAuth token service:

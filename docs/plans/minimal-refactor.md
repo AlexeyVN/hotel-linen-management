@@ -111,7 +111,7 @@ Acceptance:
 
 Acceptance:
 
-- At least 5 codes have tests and localized messages in 5 locales.
+- At least 5 codes have tests and localized messages in 6 locales.
 
 ### 2.7 E2E smoke in CI
 

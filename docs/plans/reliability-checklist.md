@@ -60,7 +60,7 @@ This is the definition of success for Stages 0–5.
 - [ ] `npm.cmd test` ≥ 103 + new tests.
 - [ ] `npm.cmd run build` green.
 - [ ] Playwright smoke: login, admin, low report, mobile tasks, locale switch.
-- [ ] 5 built-in locales + one custom pack.
+- [ ] 6 built-in locales + one custom pack.
 - [ ] API contract test.
 - [ ] Backup/restore on temporary copy.
 - [ ] No secrets/DB/node_modules in archive.
